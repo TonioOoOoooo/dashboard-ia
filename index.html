@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Les Rendez-vous de l'IA — Dashboard VINCI Energies</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f5f7; color: #1a1a1a; padding: 1.5rem; min-height: 100vh; }
+  #gate { position: fixed; inset: 0; background: #0A1628; display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; gap: 1rem; }
+  #gate-card { background: #1A2E4A; border-radius: 12px; padding: 2rem; width: 320px; text-align: center; }
+  #gate-title { color: #fff; font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+  #gate-sub { color: #B0B8C4; font-size: 12px; margin-bottom: 1.25rem; }
+  #gate-input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 0.5px solid #3A4F6A; background: #0A1628; color: #fff; font-size: 14px; margin-bottom: 10px; text-align: center; letter-spacing: 0.05em; }
+  #gate-btn { width: 100%; padding: 8px; border-radius: 6px; background: transparent; border: 0.5px solid #F5A623; color: #F5A623; cursor: pointer; font-size: 13px; }
+  #gate-err { color: #F09595; font-size: 11px; margin-top: 6px; display: none; }
+  #gate-note { color: #B0B8C4; font-size: 10px; margin-top: 8px; }
+  #app { display: none; max-width: 960px; margin: 0 auto; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+  .kpi-card { background: #fff; border-radius: 8px; padding: .875rem 1rem; border: 0.5px solid rgba(0,0,0,.08); }
+  .kpi-lbl { font-size: 11px; color: #6b7280; margin-bottom: 6px; line-height: 1.4; }
+  .kpi-val { font-size: 22px; font-weight: 500; }
+  .kpi-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  .sec-title { font-size: 11px; font-weight: 500; color: #6b7280; letter-spacing: .07em; text-transform: uppercase; margin: 1.25rem 0 .625rem; }
+  .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+  .card { background: #fff; border-radius: 8px; padding: 1rem; border: 0.5px solid rgba(0,0,0,.08); }
+  .phase-bar { height: 5px; background: #f4f5f7; border-radius: 3px; overflow: hidden; margin: 4px 0 12px; border: 0.5px solid rgba(0,0,0,.08); }
+  .phase-fill { height: 100%; border-radius: 3px; }
+  .h-bar { height: 8px; background: #f4f5f7; border-radius: 4px; overflow: hidden; margin: 6px 0 4px; border: 0.5px solid rgba(0,0,0,.08); }
+  .h-fill { height: 100%; border-radius: 4px; background: #185FA5; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .tbl th { font-size: 10px; color: #6b7280; padding: 4px 8px 8px; text-align: left; border-bottom: 0.5px solid rgba(0,0,0,.1); font-weight: 400; }
+  .tbl td { padding: 7px 8px; border-bottom: 0.5px solid rgba(0,0,0,.07); vertical-align: middle; }
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; display: inline-block; white-space: nowrap; }
+  .b-done { background: #EAF3DE; color: #27500A; }
+  .b-soon { background: #FAEEDA; color: #633806; }
+  .b-plan { background: #f4f5f7; color: #6b7280; }
+  .b-urg { background: #FCEBEB; color: #791F1F; }
+  .tag { font-size: 10px; padding: 2px 6px; border-radius: 8px; display: inline-block; white-space: nowrap; }
+  .sat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .sat-bar { flex: 1; height: 4px; background: #f4f5f7; border-radius: 2px; overflow: hidden; border: 0.5px solid rgba(0,0,0,.08); }
+  .sat-fill { height: 100%; border-radius: 2px; background: #185FA5; }
+  .sat-lbl { width: 130px; color: #6b7280; font-size: 11px; }
+  .sat-val { width: 30px; text-align: right; font-weight: 500; font-size: 12px; }
+  .tip-card { border: 0.5px solid rgba(0,0,0,.08); border-radius: 8px; padding: .6rem .875rem; display: flex; align-items: center; gap: .75rem; font-size: 12px; margin-bottom: 6px; }
+  .tip-n { width: 20px; height: 20px; border-radius: 50%; background: #185FA5; color: #E6F1FB; font-size: 10px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .res-dot { width: 16px; height: 16px; border-radius: 3px; font-size: 9px; display: inline-flex; align-items: center; justify-content: center; }
+  .pilot-row { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; padding: 6px 0; border-bottom: 0.5px solid rgba(0,0,0,.07); }
+  .pilot-row:last-child { border-bottom: none; }
+  .pip { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .verbatim { font-size: 11px; color: #6b7280; border-left: 2px solid rgba(0,0,0,.1); padding-left: 8px; margin: 3px 0; }
+  .legend-row { display: flex; gap: 14px; margin-bottom: 8px; font-size: 11px; color: #6b7280; }
+  .leg-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+  .edit-panel { border: 0.5px solid rgba(0,0,0,.15); border-radius: 12px; padding: 1.25rem; margin-top: 1.25rem; display: none; background: #fff; }
+  .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .flbl { font-size: 11px; color: #6b7280; margin-bottom: 3px; }
+  .inp { width: 100%; box-sizing: border-box; padding: 6px 10px; border: 0.5px solid rgba(0,0,0,.2); border-radius: 6px; font-size: 13px; font-family: inherit; }
+  .notif { font-size: 11px; padding: 4px 10px; border-radius: 8px; background: #EAF3DE; color: #27500A; display: none; }
+  .tab-btn { font-size: 11px; border: 0.5px solid #9ca3af; color: #9ca3af; background: transparent; padding: 4px 9px; border-radius: 6px; cursor: pointer; }
+  .tab-btn.active { color: #F5A623; border-color: #F5A623; }
+  .coach-form { border-top: 0.5px solid rgba(0,0,0,.08); margin-top: 1rem; padding-top: 1rem; display: none; }
+  button { cursor: pointer; font-family: inherit; border-radius: 6px; }
+
+  /* ATTENDANCE SHEETS */
+  .att-section { margin-top: 1.5rem; }
+  .att-tbl { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .att-tbl th { font-size: 10px; color: #6b7280; padding: 3px 8px 6px; text-align: left; border-bottom: 0.5px solid rgba(0,0,0,.1); font-weight: 400; }
+  .att-tbl td { padding: 5px 8px; border-bottom: 0.5px solid rgba(0,0,0,.06); }
+  .att-short { color: #A32D2D; }
+</style>
+</head>
+<body>
+
+<!-- GATE -->
+<div id="gate">
+  <div id="gate-card">
+    <div id="gate-title">Les Rendez-vous de l'IA</div>
+    <div id="gate-sub">Dashboard de suivi — VINCI Energies × AI Tomorrow Solutions</div>
+    <input type="password" id="gate-input" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')checkGate()">
+    <button id="gate-btn" onclick="checkGate()">Accéder</button>
+    <div id="gate-err">Mot de passe incorrect</div>
+    <div id="gate-note">Usage interne uniquement · Données personnelles protégées (RGPD)</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- HEADER -->
+  <div style="background:#0A1628;border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+    <div>
+      <div style="font-size:10px;color:#B0B8C4;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px">VINCI Energies × AI Tomorrow Solutions</div>
+      <div style="font-size:19px;font-weight:500;color:#fff">Les Rendez-vous de l'IA</div>
+      <div style="font-size:12px;color:#B0B8C4;margin-top:3px">Suivi programme · Mars → Septembre 2026</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <div style="font-size:11px;color:#F5A623" id="date-display"></div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
+        <button onclick="showTab('sat')" id="btn-sat" class="tab-btn">Satisfaction</button>
+        <button onclick="showTab('pilot')" id="btn-pilot" class="tab-btn">Pilote</button>
+        <button onclick="showTab('coaching')" id="btn-coaching" class="tab-btn">Coaching</button>
+        <button onclick="showTab('res')" id="btn-res" class="tab-btn">Ressources</button>
+        <button onclick="showTab('att')" id="btn-att" class="tab-btn">Présences</button>
+        <button onclick="toggleEdit()" id="edit-btn" style="font-size:11px;background:transparent;border:0.5px solid #F5A623;color:#F5A623;padding:4px 9px;border-radius:6px;">Saisir</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <div class="two-col">
+    <div>
+      <div class="sec-title">Avancement par phase</div>
+      <div class="card" id="phase-section"></div>
+    </div>
+    <div>
+      <div class="sec-title">Participation par session</div>
+      <div class="card" style="padding-bottom:.5rem">
+        <div class="legend-row"><span><span class="leg-dot" style="background:#185FA5"></span>FR</span><span><span class="leg-dot" style="background:#85B7EB"></span>EN</span></div>
+        <div style="position:relative;width:100%;height:180px"><canvas id="partChart" role="img" aria-label="Participation par session">S1:33 S2:27</canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel-sat" style="display:none;margin-top:1rem"></div>
+  <div id="panel-pilot" style="display:none;margin-top:1rem"></div>
+  <div id="panel-coaching" style="display:none;margin-top:1rem"></div>
+  <div id="panel-res" style="display:none;margin-top:1rem"></div>
+  <div id="panel-att" style="display:none;margin-top:1rem"></div>
+
+  <div class="sec-title" style="margin-top:1.25rem">Détail des sessions</div>
+  <div style="overflow-x:auto;border:0.5px solid rgba(0,0,0,.1);border-radius:8px;background:#fff">
+    <table class="tbl"><thead><tr><th>N°</th><th>Date</th><th>Thème</th><th style="text-align:center">FR</th><th style="text-align:center">EN</th><th style="text-align:center">Total</th><th style="text-align:center">Satisfaction</th><th style="text-align:center">Statut</th></tr></thead><tbody id="sess-body"></tbody></table>
+  </div>
+
+  <div class="edit-panel" id="edit-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><div style="font-size:13px;font-weight:500">Saisie post-session</div><span class="notif" id="save-notif">Enregistré</span></div>
+    <div style="margin-bottom:10px"><div class="flbl">Session</div><select id="sel-session" class="inp" onchange="loadForm()"></select></div>
+    <div class="frow"><div><div class="flbl">Participants FR</div><input type="number" id="inp-fr" class="inp" min="0" max="67"></div><div><div class="flbl">Participants EN</div><input type="number" id="inp-en" class="inp" min="0" max="67"></div></div>
+    <div class="frow"><div><div class="flbl">Score satisfaction (/ 5)</div><input type="number" id="inp-sat" class="inp" min="1" max="5" step="0.1"></div><div><div class="flbl">Répondants</div><input type="number" id="inp-rep" class="inp" min="0" max="67"></div></div>
+    <div style="margin-bottom:10px"><div class="flbl">Notes</div><input type="text" id="inp-notes" class="inp"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="saveSession()" style="font-size:12px;padding:6px 16px;background:#0A1628;color:#F5A623;border:0.5px solid #F5A623;border-radius:6px;">Enregistrer</button>
+      <button onclick="resetData()" style="font-size:12px;padding:6px 14px;background:#fff;border:0.5px solid #d1d5db;color:#6b7280;">Réinitialiser</button>
+      <button onclick="toggleEdit()" style="font-size:12px;padding:6px 14px;background:#fff;border:0.5px solid #d1d5db;color:#6b7280;">Fermer</button>
+    </div>
+  </div>
+
+  <div style="font-size:10px;color:#9ca3af;text-align:center;margin-top:1.5rem;padding-bottom:1rem">
+    Dashboard V4 · AI Tomorrow Solutions · Usage interne uniquement · Données réelles présence Teams + Google Form · Confidentiel RGPD
+  </div>
+</div>
+
+<script>
+// ================================================================
+// PASSWORD GATE
+// ================================================================
+const PWD = 'VINCI-IA-2026'; // Modifier ici pour changer le mot de passe
+function checkGate() {
+  const v = document.getElementById('gate-input').value;
+  if (v === PWD) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    try { sessionStorage.setItem('vinci-auth', '1'); } catch(e) {}
+  } else {
+    document.getElementById('gate-err').style.display = 'block';
+    document.getElementById('gate-input').value = '';
+    document.getElementById('gate-input').focus();
+  }
+}
+// Auto-unlock if session authenticated
+try { if (sessionStorage.getItem('vinci-auth') === '1') { document.getElementById('gate').style.display = 'none'; document.getElementById('app').style.display = 'block'; } } catch(e) {}
+
+// ================================================================
+// STATIC DATA
+// ================================================================
+const CONTRACT = {total:18, monthly:3, period:'Avr → Sept 2026', people:6};
+
+const AI_TIPS = [
+  {n:1,title:'Personalize Copilot',date:'Sem. 31 mars 2026',cat:'Setup'},
+  {n:2,title:'Clone Your Writing Style',date:'Sem. 31 mars 2026',cat:'Email'},
+  {n:3,title:'Morning Email Triage',date:'Sem. 31 mars 2026',cat:'Email'},
+  {n:4,title:'Schedule Your Daily Briefing',date:'Sem. 31 mars 2026',cat:'Email'},
+  {n:5,title:'Email → Meeting in 3 Clicks',date:'Sem. 31 mars 2026',cat:'Réunions'},
+];
+
+const PILOT_TEAM = [
+  {name:'Alice Folscheid',role:'Pilote FR',s:2,max:2,sat:true,notes:'Répondante form S1+S2'},
+  {name:'Stéphanie Heissat',role:'Pilote FR',s:2,max:2,sat:false,notes:''},
+  {name:'Rafaella Hallack',role:'Pilote EN',s:2,max:2,sat:true,notes:'Répondante form S1'},
+  {name:'Florent Jannier',role:'Pilote FR',s:1,max:2,sat:false,notes:''},
+  {name:'DE OLIVEIRA-CEZAR Paula',role:'Pilote EN',s:1,max:2,sat:false,notes:'Avancée Copilot · levier M&A'},
+];
+
+const PHASES = [
+  {id:1,label:'Phase 1 — Dompter son quotidien',color:'#185FA5',sessions:[1,2,3,4]},
+  {id:2,label:'Phase 2 — Assistant de production',color:'#3B6D11',sessions:[5,6,7,8]},
+  {id:3,label:'Phase 3 — Automatisation & Agents',color:'#854F0B',sessions:[9,10,11,12]}
+];
+
+const VERBATIMS = [
+  {session:'S1',from:'You Wu',tag:'Tip à tester',text:'Clone my writing style'},
+  {session:'S1',from:'Rafaella Hallack',tag:'Sujet demandé',text:'Analyse de contrats avec l\'IA'},
+  {session:'S1',from:'Alice Folscheid',tag:'Tip à tester',text:'Framework R-T-F-C-E'},
+  {session:'S2',from:'Alice Folscheid',tag:'Sujet demandé',text:'Contract analysis with AI · Workflow Email→Meeting→Action'},
+];
+
+// ================================================================
+// ATTENDANCE DATA (nominatif — protégé par mot de passe)
+// ================================================================
+const ATTENDANCE = {
+  S1_EN: {
+    date:'13 mars 2026',session:'S1 EN',duration:'1h08',avg_time:'46m50s',
+    participants:[
+      {name:'WU You',email:'you.wu@vinci-energies.com',time:'1h 1m',short:false},
+      {name:'PEREIRA Lola',email:'lola.pereira@vinci-energies.com',time:'1h 0m',short:false},
+      {name:'RUBIO Angela',email:'Angela.RUBIO@axians.es',time:'1h 0m',short:false},
+      {name:'HALLACK Rafaella',email:'rafaella.hallack@omexom.com',time:'1h 0m',short:false},
+      {name:'GOMES Oswaldo',email:'oswaldo.gomes@actemium.com',time:'1h 0m',short:false},
+      {name:'PEZETTA Maria',email:'maria.pezetta@axians.com',time:'59m',short:false},
+      {name:'LOPEZ Marta',email:'marta.lopez@vinci-energies.com',time:'59m',short:false},
+      {name:'DE OLIVEIRA-CEZAR Paula',email:'paula.deoliveira-cezar@vinci-energies.com',time:'58m',short:false},
+      {name:'FREMONT Sophie',email:'sophie.fremont@vinci-energies.com',time:'57m',short:false},
+      {name:'PIRES Sofia',email:'sofia.pires@axians.com',time:'57m',short:false},
+      {name:'SEGUY Olivia',email:'olivia.seguy@vinci-energies.com',time:'57m',short:false},
+      {name:'BURKE David',email:'david.burke@vinci-energies.com',time:'55m',short:false},
+      {name:'SUNDARAJ Kausalya',email:'kausalya.sundaraj@vinci-energies.com',time:'51m',short:false},
+      {name:'PEREZ Rebeca',email:'rebeca.perez@axians.com',time:'1h 2m',short:false},
+      {name:'ABREU-LOPES Alexandra',email:'alexandra.abreu-lopes@axians.com',time:'23m',short:false},
+      {name:'MOUSINHO Alexandra',email:'alexandra.mousinho@axians.com',time:'37m',short:false},
+      {name:'DA SILVA Mariana',email:'mariana.dasilva@actemium.com',time:'26m',short:false},
+      {name:'COURA Gabriela',email:'gabriela.coura@actemium.com',time:'16m',short:false},
+      {name:'VIEIRA Carla',email:'carla.vieira@actemium.com',time:'14m',short:false},
+      {name:'LEONARDO DIAS Gustavo',email:'gustavo.farias@vinci-energies.com',time:'5m',short:true},
+      {name:'COELHO Susana',email:'susana.coelho@vinci-energies.com',time:'2m',short:true},
+    ]
+  },
+  S1_FR: {
+    date:'13 mars 2026',session:'S1 FR',duration:'1h16',avg_time:'49m50s',
+    participants:[
+      {name:'PEREIRA Lola',email:'lola.pereira@vinci-energies.com',time:'1h 5m',short:false},
+      {name:'GRINA Meryem',email:'meryem.grina@cegelec.com',time:'1h 2m',short:false},
+      {name:'DEBBARH Lamiaa',email:'Lamiaa.DEBBARH@cegelec.com',time:'1h 1m',short:false},
+      {name:'DE ROUGEMONT Olivier',email:'Olivier.DE-ROUGEMONT@vinci-energies.com',time:'1h 1m',short:false},
+      {name:'GUERMONPREZ Marie',email:'marie.guermonprez@vinci-energies.com',time:'59m',short:false},
+      {name:'THIAM Thierno-Mohamedou',email:'thierno.thiam@vinci-energies.com',time:'59m',short:false},
+      {name:'FOFANA Charlene',email:'charlene.fofana@vinci-energies.com',time:'58m',short:false},
+      {name:'FOLSCHEID Alice',email:'alice.folscheid@vinci-energies.com',time:'57m',short:false},
+      {name:'HEISSAT Stephanie',email:'stephanie.heissat@vinci-energies.com',time:'42m',short:false},
+      {name:'LENORMAND Cecile',email:'Cecile.LENORMAND@vinci-energies.com',time:'36m',short:false},
+      {name:'JAMET Veronique',email:'veronique.jamet@vinci-energies.com',time:'<1m',short:true},
+      {name:'LOPES Cintia',email:'cintia.lopes@sisnergy.com.br',time:'<1m',short:true},
+    ]
+  },
+  S2_EN: {
+    date:'27 mars 2026',session:'S2 EN',duration:'1h06',avg_time:'46m17s',
+    participants:[
+      {name:'COELHO Susana',email:'susana.coelho@vinci-energies.com',time:'1h 5m',short:false},
+      {name:'PEREIRA Lola',email:'lola.pereira@vinci-energies.com',time:'1h 0m',short:false},
+      {name:'ORAA Gabriel',email:'Gabriel.ORAA@vinci-energies.com',time:'1h 0m',short:false},
+      {name:'WU You',email:'you.wu@vinci-energies.com',time:'59m',short:false},
+      {name:'RODRIGUES Silmara',email:'silmara.rodrigues@omexom.com',time:'58m',short:false},
+      {name:'BRANDAO Andressa',email:'andressa.brandao@vinci-energies.com',time:'57m',short:false},
+      {name:'HALLACK Rafaella',email:'rafaella.hallack@omexom.com',time:'55m',short:false},
+      {name:'PEZETTA Maria',email:'maria.pezetta@axians.com',time:'55m',short:false},
+      {name:'PEREZ Rebeca',email:'rebeca.perez@axians.com',time:'52m',short:false},
+      {name:'LOPEZ Marta',email:'marta.lopez@vinci-energies.com',time:'39m',short:false},
+      {name:'GOMES Oswaldo',email:'oswaldo.gomes@actemium.com',time:'30m',short:false},
+      {name:'LOBO Mariana',email:'mariana.lobo@omexom.com',time:'27m',short:false},
+      {name:'OLIVEIRA Teresa',email:'teresa.oliveira@vinci-energies.com',time:'20m',short:false},
+      {name:'SEGUY Olivia',email:'olivia.seguy@vinci-energies.com',time:'18m',short:false},
+      {name:'VIEIRA Carla',email:'carla.vieira@actemium.com',time:'1m',short:true},
+    ]
+  },
+  S2_FR: {
+    date:'27 mars 2026',session:'S2 FR',duration:'1h06',avg_time:'~60m',
+    participants:[
+      {name:'PEREIRA Lola',email:'lola.pereira@vinci-energies.com',time:'1h 8m',short:false},
+      {name:'RAKIB Amine',email:'amine.rakib@vinci-energies.com',time:'~1h',short:false},
+      {name:'GRINA Meryem',email:'meryem.grina@cegelec.com',time:'~1h',short:false},
+      {name:'DEBBARH Lamiaa',email:'Lamiaa.DEBBARH@cegelec.com',time:'55m',short:false},
+      {name:'PIGANIOL Ella',email:'ella.piganiol@vinci-energies.com',time:'55m',short:false},
+      {name:'FOLSCHEID Alice',email:'alice.folscheid@vinci-energies.com',time:'54m',short:false},
+      {name:'HEISSAT Stephanie',email:'stephanie.heissat@vinci-energies.com',time:'54m',short:false},
+      {name:'JANNIER Florent',email:'florent.jannier@vinci-energies.com',time:'54m',short:false},
+      {name:'BOUILLON Elodie',email:'Elodie.BOUILLON@vinci-energies.com',time:'52m',short:false},
+      {name:'HADOU Maouiya',email:'maouiya.hadou@cegelec.com',time:'22m',short:false},
+      {name:'RODRIGUES Silmara',email:'silmara.rodrigues@omexom.com',time:'7m',short:false},
+      {name:'BRANDAO Andressa',email:'andressa.brandao@vinci-energies.com',time:'<1m',short:true},
+    ]
+  }
+};
+
+// ================================================================
+// MUTABLE DATA
+// ================================================================
+const DEFAULT = {
+  sessions:[
+    {id:1,date:'13 mars 2026',theme:'Outlook + Copilot — Fondamentaux',phase:1,status:'done',fr:12,en:21,satisfaction:5.0,repondants:3,notes:'Sophie Frémont présente EN (57m). 2 départs <1min en FR : probable confusion FR→EN, session EN 1h après.',sat_detail:[{lbl:'Pertinence',v:5},{lbl:'Clarté',v:5},{lbl:'Exemples pratiques',v:5},{lbl:'Profondeur',v:5},{lbl:'Rythme',v:5},{lbl:'Confiance Copilot',v:4.3}]},
+    {id:2,date:'27 mars 2026',theme:'Outlook + Copilot — Avancé',phase:1,status:'done',fr:12,en:15,satisfaction:5.0,repondants:1,notes:'2 départs <2min : probable confusion FR→EN. 1 répondant satisfaction.',sat_detail:[{lbl:'Pertinence',v:5},{lbl:'Clarté',v:5},{lbl:'Exemples pratiques',v:5},{lbl:'Profondeur',v:5},{lbl:'Rythme',v:5},{lbl:'Confiance Copilot',v:5}]},
+    {id:3,date:'10 avr. 2026',theme:'Teams Conversations + Copilot',phase:1,status:'upcoming',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
+    {id:4,date:'~28 avr. 2026',theme:'Teams Réunions + Copilot',phase:1,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'Date à confirmer',sat_detail:[]},
+    {id:5,date:'7 mai 2026',theme:'PowerPoint + Copilot',phase:2,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
+    {id:6,date:'21 mai 2026',theme:'Cas métiers juridiques — TBD',phase:2,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
+    {id:7,date:'5 juin 2026',theme:'Cas métiers juridiques — TBD',phase:2,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
+    {id:8,date:'17 juin 2026',theme:'Cas métiers juridiques — TBD',phase:2,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
+    {id:9,date:'10 juil. 2026',theme:'Automatisation & Agents — TBD',phase:3,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
+    {id:10,date:'24 juil. 2026',theme:'Automatisation & Agents — TBD',phase:3,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
+    {id:11,date:'4 sept. 2026',theme:'Automatisation & Agents — TBD',phase:3,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
+    {id:12,date:'18 sept. 2026',theme:'Automatisation & Agents — TBD',phase:3,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
+  ],
+  coaching:[
+    {id:1,name:'Lola Pereira',tag:'Ambassadrice pilote',h:0,n:0,last:'—',next:'À confirmer',content:'Agent triage email · Workflow CAR',urgent:false},
+    {id:2,name:'Charlène Fofana',tag:'',h:0,n:0,last:'—',next:'À confirmer',content:'Classement emails Outlook',urgent:false},
+    {id:3,name:'DE OLIVEIRA-CEZAR Paula',tag:'',h:0,n:0,last:'—',next:'À confirmer',content:'PPT · Suivi dossiers · Garanties hors bilan · M&A 14 slides',urgent:false},
+    {id:4,name:'Florent Jannier',tag:'',h:0,n:0,last:'—',next:'À confirmer',content:'Veille IA multi-pays · Vérification dates',urgent:false},
+    {id:5,name:'Sophie Frémont',tag:'Sponsor',h:0,n:0,last:'—',next:'À confirmer',content:'Agent triage email matinal · GPT-4 Think Deeper (7h)',urgent:false},
+    {id:6,name:'David (contentieux)',tag:'',h:0,n:0,last:'—',next:'9 avr. 2026 — 15h',content:'—',urgent:true},
+  ],
+  resources:[
+    {sid:1,pdf:true,rec_fr:true,rec_en:true,ppt:true,trackable:false,clicks:null},
+    {sid:2,pdf:true,rec_fr:true,rec_en:true,ppt:true,trackable:false,clicks:null},
+    {sid:3,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
+    {sid:4,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
+    {sid:5,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
+    {sid:6,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
+    {sid:7,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
+    {sid:8,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
+    {sid:9,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
+    {sid:10,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
+    {sid:11,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
+    {sid:12,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
+  ]
+};
+
+let D = JSON.parse(JSON.stringify(DEFAULT));
+let chartInst = null;
+
+const getDone = () => D.sessions.filter(s => s.status === 'done');
+const totalPart = () => getDone().reduce((a, s) => a + (s.fr||0) + (s.en||0), 0);
+const totalRep = () => getDone().reduce((a, s) => a + (s.repondants||0), 0);
+const avgSat = () => { const d = getDone().filter(s => s.satisfaction !== null); return d.length ? d.reduce((a,s) => a+s.satisfaction, 0)/d.length : null; };
+const totalCoachH = () => D.coaching.reduce((a, p) => a + (p.h||0), 0);
+
+function renderKPIs() {
+  const done = getDone(), tp = totalPart(), sat = avgSat(), ch = totalCoachH();
+  const next = D.sessions.find(s => s.status === 'upcoming') || D.sessions.find(s => s.status === 'planned');
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card"><div class="kpi-lbl">Sessions réalisées</div><div class="kpi-val" style="color:#185FA5">${done.length}<span style="font-size:14px;color:#6b7280"> / 12</span></div><div class="kpi-sub">${Math.round(done.length/12*100)}% du programme</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Participants live (cumul)</div><div class="kpi-val">${tp}</div><div class="kpi-sub">moy. ${done.length ? Math.round(tp/done.length) : 0} / session</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Satisfaction moyenne</div><div class="kpi-val" style="color:#3B6D11">${sat ? sat.toFixed(1) : '—'}<span style="font-size:14px;color:#6b7280"> /5</span></div><div class="kpi-sub">${totalRep()} rép. · ${tp ? Math.round(totalRep()/tp*100) : 0}% taux</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Coaching holding</div><div class="kpi-val" style="color:#854F0B">${ch.toFixed(1)}<span style="font-size:14px;color:#6b7280"> / ${CONTRACT.total}h</span></div><div class="kpi-sub">${(CONTRACT.total-ch).toFixed(1)}h restantes · ${CONTRACT.people} pers.</div></div>`;
+}
+
+function renderPhases() {
+  let h = '';
+  PHASES.forEach(p => {
+    const dc = D.sessions.filter(s => p.sessions.includes(s.id) && s.status === 'done').length;
+    const pct = Math.round(dc/p.sessions.length*100);
+    h += `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between"><div style="font-size:12px">${p.label}</div><div style="font-size:10px;color:#6b7280">${dc}/${p.sessions.length}</div></div><div class="phase-bar"><div class="phase-fill" style="width:${pct}%;background:${p.color}"></div></div></div>`;
+  });
+  document.getElementById('phase-section').innerHTML = h;
+}
+
+function renderChart() {
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  chartInst = new Chart(document.getElementById('partChart'), {
+    type: 'bar',
+    data: { labels: D.sessions.map(s => 'S'+s.id), datasets: [
+      {label:'FR', data:D.sessions.map(s=>s.fr||0), backgroundColor:'#185FA5', stack:'p'},
+      {label:'EN', data:D.sessions.map(s=>s.en||0), backgroundColor:'#85B7EB', stack:'p'}
+    ]},
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{afterBody:(items)=>{const s=D.sessions[items[0].dataIndex];const t=(s.fr||0)+(s.en||0);return t>0?['Total: '+t]:[];}}}}, scales:{x:{stacked:true,ticks:{font:{size:10},color:'#888'},grid:{display:false}},y:{stacked:true,beginAtZero:true,max:70,ticks:{font:{size:10},color:'#888',stepSize:10},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
+}
+
+function renderTable() {
+  const pc = {1:'#185FA5', 2:'#3B6D11', 3:'#854F0B'};
+  const sm = {done:'<span class="badge b-done">Réalisée</span>',upcoming:'<span class="badge b-soon">Prochaine</span>',planned:'<span class="badge b-plan">Planifiée</span>'};
+  let h = '';
+  D.sessions.forEach(s => {
+    const tot = s.fr !== null ? (s.fr+s.en) : null;
+    const satD = s.satisfaction !== null ? `<span style="color:#3B6D11;font-weight:500">${s.satisfaction.toFixed(1)}</span><span style="color:#6b7280">/5</span>` : (s.repondants > 0 ? s.repondants+' rép.' : '—');
+    h += `<tr style="${s.status==='planned'?'opacity:.4':''}"><td style="border-left:3px solid ${pc[s.phase]};padding-left:10px;font-weight:500;white-space:nowrap">S${s.id}</td><td style="white-space:nowrap;font-size:11px">${s.date}</td><td style="max-width:200px">${s.theme}</td><td style="text-align:center">${s.fr!==null?s.fr:'—'}</td><td style="text-align:center">${s.en!==null?s.en:'—'}</td><td style="text-align:center;font-weight:${tot?'500':'400'}">${tot!==null?tot:'—'}</td><td style="text-align:center;font-size:12px">${satD}</td><td style="text-align:center">${sm[s.status]}</td></tr>`;
+  });
+  document.getElementById('sess-body').innerHTML = h;
+}
+
+function renderSat() {
+  const satBar = v => `<div class="sat-row"><div class="sat-lbl">${v.lbl}</div><div class="sat-bar"><div class="sat-fill" style="width:${v.v/5*100}%"></div></div><div class="sat-val">${v.v.toFixed(1)}</div></div>`;
+  const s1 = D.sessions[0], s2 = D.sessions[1];
+  let vh = '<div style="font-size:12px;font-weight:500;margin-bottom:8px">Thèmes demandés (verbatims)</div>';
+  VERBATIMS.forEach(v => { vh += `<div style="margin-bottom:8px"><div style="display:flex;gap:4px;align-items:center;margin-bottom:2px"><span style="font-size:10px;background:#f4f5f7;border:0.5px solid rgba(0,0,0,.1);padding:1px 6px;border-radius:8px;color:#6b7280">${v.session}</span><span style="font-size:10px;color:#6b7280">${v.from} · ${v.tag}</span></div><div class="verbatim">${v.text}</div></div>`; });
+  vh += `<div style="margin-top:10px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08);font-size:11px;color:#6b7280">Sujet récurrent : <strong>Analyse de contrats avec l'IA</strong> — 3 mentions sur 4 retours</div>`;
+  document.getElementById('panel-sat').innerHTML = `<div class="sec-title">Retours satisfaction — données Google Form</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem">
+    <div class="card"><div style="font-size:12px;font-weight:500;margin-bottom:2px">S1 — 13 mars</div><div style="font-size:10px;color:#6b7280;margin-bottom:10px">${s1.repondants} répondants / ${(s1.fr||0)+(s1.en||0)} présents</div>${s1.sat_detail.map(satBar).join('')}<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08);font-size:24px;font-weight:500;color:#3B6D11;text-align:center">${s1.satisfaction.toFixed(1)} <span style="font-size:13px;color:#6b7280">/ 5</span></div></div>
+    <div class="card"><div style="font-size:12px;font-weight:500;margin-bottom:2px">S2 — 27 mars</div><div style="font-size:10px;color:#6b7280;margin-bottom:10px">1 répondant / ${(s2.fr||0)+(s2.en||0)} présents · <span style="color:#A32D2D">taux 4%</span></div>${s2.sat_detail.map(satBar).join('')}<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08);font-size:24px;font-weight:500;color:#3B6D11;text-align:center">${s2.satisfaction.toFixed(1)} <span style="font-size:13px;color:#6b7280">/ 5</span></div></div>
+    <div class="card">${vh}</div>
+  </div>`;
+}
+
+function renderPilot() {
+  let rows = '';
+  PILOT_TEAM.forEach(pt => {
+    const pips = Array.from({length:pt.max}, (_,i) => `<div class="pip" style="background:${i<pt.s?'#185FA5':'#e5e7eb'}"></div>`).join('');
+    const satB = pt.sat ? `<span class="tag" style="background:#EAF3DE;color:#27500A;margin-left:3px">Form ✓</span>` : '';
+    rows += `<div class="pilot-row"><div style="display:flex;gap:3px;align-items:center;margin-top:2px">${pips}</div><div style="flex:1"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:3px"><span>${pt.name}</span><span class="tag" style="background:#f4f5f7;color:#6b7280">${pt.role}</span>${satB}</div>${pt.notes?`<div style="font-size:10px;color:#6b7280;margin-top:1px">${pt.notes}</div>`:''}</div></div>`;
+  });
+  document.getElementById('panel-pilot').innerHTML = `<div class="sec-title">Équipe pilote & ambassadrice</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem">
+    <div><div style="font-size:11px;color:#6b7280;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;font-weight:500">Ambassadrice principale</div>
+      <div class="card" style="border-left:3px solid #F5A623"><div style="font-weight:500;font-size:13px;margin-bottom:4px">Lola Pereira</div><div style="font-size:11px;color:#6b7280;margin-bottom:6px">Coordinatrice VINCI · Rôle officiel validé par Sophie Frémont</div><div style="display:flex;gap:4px;flex-wrap:wrap"><span class="tag" style="background:#FAEEDA;color:#633806">Ambassadrice pilote</span><span class="tag" style="background:#EAF3DE;color:#27500A">S1+S2 FR & EN</span></div></div></div>
+    <div><div style="font-size:11px;color:#6b7280;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;font-weight:500">Groupe champion — assiduité</div>
+      <div class="card">${rows}</div></div>
+  </div>`;
+}
+
+function renderCoaching() {
+  const ch = totalCoachH(), pct = Math.min(Math.round(ch/CONTRACT.total*100), 100);
+  let rows = '';
+  D.coaching.forEach(c => {
+    const nextHtml = c.urgent ? `<span class="badge b-urg">${c.next}</span>` : `<span style="font-size:11px;color:#6b7280">${c.next}</span>`;
+    const tagHtml = c.tag ? `<span class="tag" style="background:#f4f5f7;color:#6b7280;margin-left:4px">${c.tag}</span>` : '';
+    rows += `<tr style="${c.urgent?'background:rgba(252,235,235,0.3)':''}"><td><div style="font-weight:500">${c.name}${tagHtml}</div>${c.content&&c.content!=='—'?`<div style="font-size:10px;color:#6b7280;margin-top:2px">${c.content}</div>`:''}</td><td style="text-align:center">${c.n}</td><td style="font-size:11px;color:#6b7280;white-space:nowrap">${c.last}</td><td style="font-size:11px">${nextHtml}</td><td style="text-align:center;font-weight:500;color:${c.h>0?'#185FA5':'#6b7280'}">${c.h.toFixed(1)}h</td><td style="text-align:right"><button onclick="openCoachEdit(${c.id})" style="font-size:10px;padding:2px 8px;cursor:pointer;border-radius:4px;background:#fff;border:0.5px solid #d1d5db;font-family:inherit">+ session</button></td></tr>`;
+  });
+  document.getElementById('panel-coaching').innerHTML = `
+    <div class="sec-title">Coaching holding — contrat 18h · 6 personnes · Avr→Sept 2026</div>
+    <div class="card" style="margin-bottom:1rem">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:.75rem">
+        <div><div style="font-size:11px;color:#6b7280">Budget total</div><div style="font-size:20px;font-weight:500">${CONTRACT.total}h</div><div style="font-size:10px;color:#6b7280">${CONTRACT.period}</div></div>
+        <div><div style="font-size:11px;color:#6b7280">Utilisées</div><div style="font-size:20px;font-weight:500;color:#185FA5">${ch.toFixed(1)}h</div><div style="font-size:10px;color:#6b7280">${pct}% du contrat</div></div>
+        <div><div style="font-size:11px;color:#6b7280">Restantes</div><div style="font-size:20px;font-weight:500;color:#3B6D11">${(CONTRACT.total-ch).toFixed(1)}h</div><div style="font-size:10px;color:#6b7280">${CONTRACT.monthly}h/mois max</div></div>
+      </div>
+      <div class="h-bar"><div class="h-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:10px;color:#6b7280;text-align:right;margin-top:2px">Accompagnement cas réels · Sessions 1-to-1 ou petit groupe (3-5 pers.) · Support <24h</div>
+    </div>
+    <div style="overflow-x:auto;border:0.5px solid rgba(0,0,0,.1);border-radius:8px;background:#fff">
+      <table class="tbl"><thead><tr><th>Personne · contenu traité</th><th style="text-align:center">Sessions</th><th>Dernière date</th><th>Prochain RDV</th><th style="text-align:center">H cumulées</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    </div>
+    <div class="coach-form" id="coach-form">
+      <div style="font-size:12px;font-weight:500;margin-bottom:10px" id="coach-form-title">Saisir une session coaching</div>
+      <div class="frow"><div><div class="flbl">Heures effectuées</div><input type="number" id="coach-h" class="inp" min="0.5" max="3" step="0.5" placeholder="Ex: 1.5"></div><div><div class="flbl">Date session</div><input type="text" id="coach-date" class="inp" placeholder="Ex: 10 avr. 2026"></div></div>
+      <div style="margin-bottom:10px"><div class="flbl">Contenu traité</div><input type="text" id="coach-content" class="inp" placeholder="Cas pratiques couverts"></div>
+      <div style="margin-bottom:10px"><div class="flbl">Prochain RDV</div><input type="text" id="coach-next" class="inp" placeholder="Ex: 24 avr. 2026 — 14h"></div>
+      <div style="display:flex;gap:8px"><button onclick="saveCoach()" style="font-size:12px;padding:6px 14px;background:#0A1628;color:#F5A623;border:0.5px solid #F5A623;border-radius:6px;font-family:inherit">Enregistrer</button><button onclick="closeCoachForm()" style="font-size:12px;padding:6px 14px;background:#fff;border:0.5px solid #d1d5db;color:#6b7280;font-family:inherit">Annuler</button></div>
+    </div>`;
+}
+
+function renderResources() {
+  const dot = v => v === true ? `<span class="res-dot" style="background:#EAF3DE;color:#27500A">✓</span>` : `<span class="res-dot" style="background:#f4f5f7;color:#9ca3af">—</span>`;
+  let rows = '';
+  D.resources.slice(0, 6).forEach(r => {
+    const s = D.sessions.find(x => x.id === r.sid);
+    const trk = r.trackable ? `<span class="tag" style="background:#EAF3DE;color:#27500A">Shared drive ✓</span>` : `<span style="font-size:10px;color:#6b7280">OneDrive</span>`;
+    const clicksCell = r.clicks !== null ? `<strong>${r.clicks} clics</strong>` : trk;
+    rows += `<tr style="${s.status==='planned'?'opacity:.4':''}"><td style="font-weight:500;white-space:nowrap">S${r.sid}</td><td style="font-size:11px;color:#6b7280;white-space:nowrap">${s.date}</td><td style="text-align:center">${dot(r.pdf)}</td><td style="text-align:center">${dot(r.rec_fr)}</td><td style="text-align:center">${dot(r.rec_en)}</td><td style="text-align:center">${dot(r.ppt)}</td><td style="text-align:center">${clicksCell}</td></tr>`;
+  });
+  const catColor = {'Setup':'#185FA5','Email':'#3B6D11','Réunions':'#854F0B'};
+  let tipCards = '';
+  AI_TIPS.forEach(t => {
+    tipCards += `<div class="tip-card"><div class="tip-n">${t.n}</div><div style="flex:1"><div style="font-weight:500">${t.title}</div><div style="font-size:10px;color:#6b7280;margin-top:1px">${t.date}</div></div><span class="tag" style="background:#f4f5f7;color:${catColor[t.cat]||'#6b7280'};border:0.5px solid rgba(0,0,0,.08)">${t.cat}</span><span style="color:#3B6D11;font-size:12px;flex-shrink:0">✓</span></div>`;
+  });
+  document.getElementById('panel-res').innerHTML = `
+    <div class="sec-title">Livrables envoyés post-session</div>
+    <div class="card" style="margin-bottom:1rem">
+      <div style="font-size:11px;color:#6b7280;margin-bottom:8px">Envoi systématique : PDF prompts · Enregistrement FR · Enregistrement EN · PowerPoint<br>S1+S2 : OneDrive (non traçable) · S3+ : shared drive VINCI (traçable dès S3)</div>
+      <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>N°</th><th>Date</th><th style="text-align:center">PDF</th><th style="text-align:center">Rec FR</th><th style="text-align:center">Rec EN</th><th style="text-align:center">PPT</th><th style="text-align:center">Traçabilité</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>
+    <div class="sec-title">AI Tips partagés avec l'équipe</div>
+    <div class="card"><div style="font-size:11px;color:#6b7280;margin-bottom:10px">${AI_TIPS.length} tips envoyés · Format one slide = one tip · Partagé avec Lola dans le programme de formation · Semaine du 31 mars 2026</div>${tipCards}</div>`;
+}
+
+function renderAttendance() {
+  const sheets = [
+    {key:'S1_FR', label:'Session #1 — Français', color:'#185FA5'},
+    {key:'S1_EN', label:'Session #1 — English', color:'#85B7EB'},
+    {key:'S2_FR', label:'Session #2 — Français', color:'#185FA5'},
+    {key:'S2_EN', label:'Session #2 — English', color:'#85B7EB'},
+  ];
+  let html = `<div class="sec-title">Feuilles de présence nominatives — Sessions S1 et S2</div><div style="font-size:11px;color:#6b7280;margin-bottom:1rem">Données issues des rapports Teams · Hors Antoine Billotte (organisateur) + bot Fireflies.ai · <strong>Confidentiel RGPD</strong> — usage interne uniquement</div>`;
+  sheets.forEach(sheet => {
+    const data = ATTENDANCE[sheet.key];
+    const nonShort = data.participants.filter(p => !p.short);
+    const shorts = data.participants.filter(p => p.short);
+    let rows = '';
+    data.participants.forEach((p, i) => {
+      rows += `<tr style="${p.short?'color:#9ca3af':''}" title="${p.short?'Départ prématuré — probable confusion FR→EN':''}"><td style="font-size:11px">${i+1}</td><td style="font-weight:500">${p.name}${p.short?` <span style="font-size:9px;color:#A32D2D">*</span>`:''}</td><td style="font-size:11px;color:#6b7280">${p.email}</td><td style="text-align:center;font-size:11px${p.short?';color:#9ca3af':''}">${p.time}</td></tr>`;
+    });
+    html += `<div style="margin-bottom:1.5rem">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:.5rem">
+        <div style="width:3px;height:20px;border-radius:2px;background:${sheet.color};flex-shrink:0"></div>
+        <div style="font-size:13px;font-weight:500">${sheet.label}</div>
+        <span class="badge" style="background:#f4f5f7;color:#6b7280">${data.date} · ${data.duration}</span>
+        <span class="badge b-done">${nonShort.length} participants</span>
+        ${shorts.length>0?`<span style="font-size:11px;color:#9ca3af">${shorts.length} départ(s) prématuré(s)*</span>`:''}
+      </div>
+      <div style="overflow-x:auto;border:0.5px solid rgba(0,0,0,.1);border-radius:8px;background:#fff">
+        <table class="att-tbl"><thead><tr><th>#</th><th>Nom</th><th>Email</th><th style="text-align:center">Temps de présence</th></tr></thead><tbody>${rows}</tbody></table>
+      </div>
+    </div>`;
+  });
+  html += `<div style="font-size:10px;color:#9ca3af;margin-top:.5rem">* Départs <2min : probable confusion de session FR/EN. Ces participants ont vraisemblablement rejoint la session EN 1h après.</div>`;
+  document.getElementById('panel-att').innerHTML = html;
+}
+
+let activeTab = null, editingCoachId = null;
+function showTab(tab) {
+  ['sat','pilot','coaching','res','att'].forEach(t => {
+    document.getElementById('panel-'+t).style.display = 'none';
+    const b = document.getElementById('btn-'+t);
+    if (b) b.classList.remove('active');
+  });
+  if (activeTab === tab) { activeTab = null; return; }
+  activeTab = tab;
+  document.getElementById('panel-'+tab).style.display = 'block';
+  const b = document.getElementById('btn-'+tab);
+  if (b) b.classList.add('active');
+  if (tab === 'sat') renderSat();
+  if (tab === 'pilot') renderPilot();
+  if (tab === 'coaching') renderCoaching();
+  if (tab === 'res') renderResources();
+  if (tab === 'att') renderAttendance();
+}
+
+function toggleEdit() {
+  const p = document.getElementById('edit-panel'), b = document.getElementById('edit-btn');
+  const open = p.style.display !== 'none';
+  p.style.display = open ? 'none' : 'block';
+  b.textContent = open ? 'Saisir' : 'Fermer';
+  if (!open) { document.getElementById('sel-session').innerHTML = D.sessions.map(s => `<option value="${s.id}">S${s.id} — ${s.date} — ${s.theme.split('—')[0].trim()}</option>`).join(''); loadForm(); }
+}
+function loadForm() {
+  const s = D.sessions.find(x => x.id === parseInt(document.getElementById('sel-session').value));
+  document.getElementById('inp-fr').value = s.fr !== null ? s.fr : '';
+  document.getElementById('inp-en').value = s.en !== null ? s.en : '';
+  document.getElementById('inp-sat').value = s.satisfaction !== null ? s.satisfaction : '';
+  document.getElementById('inp-rep').value = s.repondants || '';
+  document.getElementById('inp-notes').value = s.notes || '';
+}
+
+function openCoachEdit(id) {
+  editingCoachId = id;
+  const c = D.coaching.find(x => x.id === id);
+  document.getElementById('coach-form-title').textContent = 'Session coaching — ' + c.name;
+  document.getElementById('coach-h').value = '';
+  document.getElementById('coach-date').value = '';
+  document.getElementById('coach-content').value = c.content || '';
+  document.getElementById('coach-next').value = c.next || '';
+  document.getElementById('coach-form').style.display = 'block';
+}
+function closeCoachForm() { const f = document.getElementById('coach-form'); if (f) f.style.display = 'none'; }
+
+function saveSession() {
+  const id = parseInt(document.getElementById('sel-session').value);
+  const s = D.sessions.find(x => x.id === id);
+  const fr = document.getElementById('inp-fr').value, en = document.getElementById('inp-en').value;
+  const sat = document.getElementById('inp-sat').value, rep = document.getElementById('inp-rep').value;
+  s.fr = fr !== '' ? parseInt(fr) : null;
+  s.en = en !== '' ? parseInt(en) : null;
+  s.satisfaction = sat !== '' ? parseFloat(sat) : null;
+  s.repondants = rep !== '' ? parseInt(rep) : 0;
+  s.notes = document.getElementById('inp-notes').value;
+  if (s.fr !== null || s.en !== null) s.status = 'done';
+  saveData(); renderAll();
+  const n = document.getElementById('save-notif'); n.style.display = 'inline-block'; setTimeout(() => n.style.display = 'none', 2500);
+}
+
+function saveCoach() {
+  const c = D.coaching.find(x => x.id === editingCoachId);
+  const addH = parseFloat(document.getElementById('coach-h').value) || 0;
+  const date = document.getElementById('coach-date').value;
+  const content = document.getElementById('coach-content').value;
+  const next = document.getElementById('coach-next').value;
+  c.h = +((c.h || 0) + addH).toFixed(1);
+  if (addH > 0) c.n = (c.n || 0) + 1;
+  if (date) c.last = date;
+  if (content) c.content = content;
+  if (next) { c.next = next; c.urgent = false; }
+  saveData(); renderKPIs(); renderCoaching();
+}
+
+function resetData() {
+  if (!confirm('Réinitialiser toutes les données ?')) return;
+  D = JSON.parse(JSON.stringify(DEFAULT));
+  try { localStorage.removeItem('vinci-v4'); } catch(e) {}
+  renderAll(); if (activeTab) showTab(activeTab);
+}
+
+function saveData() { try { localStorage.setItem('vinci-v4', JSON.stringify(D)); } catch(e) {} }
+
+function renderAll() { renderKPIs(); renderPhases(); renderTable(); renderChart(); }
+
+function init() {
+  try { const s = localStorage.getItem('vinci-v4'); if (s) D = JSON.parse(s); } catch(e) {}
+  document.getElementById('date-display').textContent = new Date().toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'});
+  renderAll();
+}
+init();
+</script>
+</body>
+</html>
