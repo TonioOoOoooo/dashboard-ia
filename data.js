@@ -17,11 +17,11 @@ var AI_TIPS = [
 ];
 
 var PILOT_TEAM = [
-  {name:'Alice Folscheid',role:'Pilote FR',s:2,max:2,sat:true,notes:'Répondante form S1+S2'},
-  {name:'Stéphanie Heissat',role:'Pilote FR',s:2,max:2,sat:false,notes:''},
-  {name:'Rafaella Hallack',role:'Pilote EN',s:2,max:2,sat:true,notes:'Répondante form S1'},
-  {name:'Florent Jannier',role:'Pilote FR',s:1,max:2,sat:false,notes:''},
-  {name:'DE OLIVEIRA-CEZAR Paula',role:'Pilote EN',s:1,max:2,sat:false,notes:'Avancée Copilot · levier M&A'},
+  {name:'Alice Folscheid',role:'Pilote FR',s:2,max:3,sat:true,notes:'Répondante form S1+S2 · Absente S3'},
+  {name:'Stéphanie Heissat',role:'Pilote FR',s:3,max:3,sat:false,notes:'Présente S3 FR'},
+  {name:'Rafaella Hallack',role:'Pilote EN',s:3,max:3,sat:true,notes:'Répondante form S1+S3'},
+  {name:'Florent Jannier',role:'Pilote FR/EN',s:2,max:3,sat:false,notes:'Présent S3 EN'},
+  {name:'DE OLIVEIRA-CEZAR Paula',role:'Pilote EN',s:1,max:3,sat:false,notes:'Avancée Copilot · levier M&A · Absente S3'},
 ];
 
 var PHASES = [
@@ -35,6 +35,8 @@ var VERBATIMS = [
   {session:'S1',from:'Rafaella Hallack',tag:'Sujet demandé',text:'Analyse de contrats avec l\'IA'},
   {session:'S1',from:'Alice Folscheid',tag:'Tip à tester',text:'Framework R-T-F-C-E'},
   {session:'S2',from:'Alice Folscheid',tag:'Sujet demandé',text:'Contract analysis with AI · Workflow Email→Meeting→Action'},
+  {session:'S3',from:'Teresa Oliveira',tag:'Sujet demandé',text:'PowerPoint avec Copilot'},
+  {session:'S3',from:'Rafaella Hallack',tag:'Sujet demandé',text:'Analyse de documents avec Copilot'},
 ];
 
 // ================================================================

@@ -226,16 +226,29 @@ function renderTable() {
 }
 
 function renderSat() {
-  const satBar = v => `<div class="sat-row"><div class="sat-lbl">${v.lbl}</div><div class="sat-bar"><div class="sat-fill" style="width:${v.v/5*100}%"></div></div><div class="sat-val">${v.v.toFixed(1)}</div></div>`;
-  const s1 = D.sessions[0], s2 = D.sessions[1];
+  const satBar = r => `<div class="sat-row"><div class="sat-lbl">${r.lbl}</div><div class="sat-bar"><div class="sat-fill" style="width:${r.v/5*100}%"></div></div><div class="sat-val">${r.v.toFixed(1)}</div></div>`;
+  const doneSessions = D.sessions.filter(s => s.satisfaction !== null);
+  let cards = '';
+  doneSessions.forEach(s => {
+    const total = (s.fr||0)+(s.en||0);
+    const tauxHtml = s.repondants > 0 && total > 0 && (s.repondants/total) < 0.15
+      ? ` · <span style="color:#A32D2D">taux ${Math.round(s.repondants/total*100)}%</span>` : '';
+    cards += `<div class="card">
+      <div style="font-size:12px;font-weight:500;margin-bottom:2px">S${s.id} — ${s.date}</div>
+      <div style="font-size:10px;color:#6b7280;margin-bottom:10px">${s.repondants} répondant(s) / ${total} présents${tauxHtml}</div>
+      ${s.sat_detail.map(satBar).join('')}
+      <div style="margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08);font-size:24px;font-weight:500;color:#3B6D11;text-align:center">${s.satisfaction.toFixed(1)} <span style="font-size:13px;color:#6b7280">/ 5</span></div>
+    </div>`;
+  });
   let vh = '<div style="font-size:12px;font-weight:500;margin-bottom:8px">Thèmes demandés (verbatims)</div>';
   VERBATIMS.forEach(v => { vh += `<div style="margin-bottom:8px"><div style="display:flex;gap:4px;align-items:center;margin-bottom:2px"><span style="font-size:10px;background:#f4f5f7;border:0.5px solid rgba(0,0,0,.1);padding:1px 6px;border-radius:8px;color:#6b7280">${v.session}</span><span style="font-size:10px;color:#6b7280">${v.from} · ${v.tag}</span></div><div class="verbatim">${v.text}</div></div>`; });
-  vh += `<div style="margin-top:10px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08);font-size:11px;color:#6b7280">Sujet récurrent : <strong>Analyse de contrats avec l'IA</strong> — 3 mentions sur 4 retours</div>`;
-  document.getElementById('panel-sat').innerHTML = `<div class="sec-title">Retours satisfaction — données Google Form</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem">
-    <div class="card"><div style="font-size:12px;font-weight:500;margin-bottom:2px">S1 — 13 mars</div><div style="font-size:10px;color:#6b7280;margin-bottom:10px">${s1.repondants} répondants / ${(s1.fr||0)+(s1.en||0)} présents</div>${s1.sat_detail.map(satBar).join('')}<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08);font-size:24px;font-weight:500;color:#3B6D11;text-align:center">${s1.satisfaction.toFixed(1)} <span style="font-size:13px;color:#6b7280">/ 5</span></div></div>
-    <div class="card"><div style="font-size:12px;font-weight:500;margin-bottom:2px">S2 — 27 mars</div><div style="font-size:10px;color:#6b7280;margin-bottom:10px">1 répondant / ${(s2.fr||0)+(s2.en||0)} présents · <span style="color:#A32D2D">taux 4%</span></div>${s2.sat_detail.map(satBar).join('')}<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08);font-size:24px;font-weight:500;color:#3B6D11;text-align:center">${s2.satisfaction.toFixed(1)} <span style="font-size:13px;color:#6b7280">/ 5</span></div></div>
-    <div class="card">${vh}</div>
-  </div>`;
+  const recurring = VERBATIMS.reduce((acc,v) => { const k=v.text.toLowerCase(); acc[k]=(acc[k]||0)+1; return acc; },{});
+  const top = Object.entries(recurring).sort((a,b)=>b[1]-a[1])[0];
+  if (top && top[1]>1) vh += `<div style="font-size:10px;color:#6b7280;margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08)">Sujet récurrent : <strong>${top[0]}</strong> — ${top[1]} mentions</div>`;
+  document.getElementById('panel-sat').innerHTML = `
+    <div class="sec-title">Retours satisfaction — données Google Form</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1rem">${cards}</div>
+    <div class="card">${vh}</div>`;
 }
 
 function renderPilot() {
@@ -247,7 +260,7 @@ function renderPilot() {
   });
   document.getElementById('panel-pilot').innerHTML = `<div class="sec-title">Équipe pilote & ambassadrice</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem">
     <div><div style="font-size:11px;color:#6b7280;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;font-weight:500">Ambassadrice principale</div>
-      <div class="card" style="border-left:3px solid #F5A623"><div style="font-weight:500;font-size:13px;margin-bottom:4px">Lola Pereira</div><div style="font-size:11px;color:#6b7280;margin-bottom:6px">Coordinatrice VINCI · Rôle officiel validé par Sophie Frémont</div><div style="display:flex;gap:4px;flex-wrap:wrap"><span class="tag" style="background:#FAEEDA;color:#633806">Ambassadrice pilote</span><span class="tag" style="background:#EAF3DE;color:#27500A">S1+S2 FR & EN</span></div></div></div>
+      <div class="card" style="border-left:3px solid #F5A623"><div style="font-weight:500;font-size:13px;margin-bottom:4px">Lola Pereira</div><div style="font-size:11px;color:#6b7280;margin-bottom:6px">Coordinatrice VINCI · Rôle officiel validé par Sophie Frémont</div><div style="display:flex;gap:4px;flex-wrap:wrap"><span class="tag" style="background:#FAEEDA;color:#633806">Ambassadrice pilote</span><span class="tag" style="background:#EAF3DE;color:#27500A">S1+S2+S3 FR & EN</span></div></div></div>
     <div><div style="font-size:11px;color:#6b7280;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;font-weight:500">Groupe champion — assiduité</div>
       <div class="card">${rows}</div></div>
   </div>`;
@@ -317,7 +330,7 @@ function renderAttendance() {
     {key:'S3_FR', label:'Session #3 — Français', color:'#185FA5'},
     {key:'S3_EN', label:'Session #3 — English', color:'#85B7EB'},
   ];
-  let html = `<div class="sec-title">Feuilles de présence nominatives — Sessions S1 et S2</div><div style="font-size:11px;color:#6b7280;margin-bottom:1rem">Données issues des rapports Teams · Hors Antoine Billotte (organisateur) + bot Fireflies.ai · <strong>Confidentiel RGPD</strong> — usage interne uniquement</div>`;
+  let html = `<div class="sec-title">Feuilles de présence nominatives</div><div style="font-size:11px;color:#6b7280;margin-bottom:1rem">Données issues des rapports Teams · Hors Antoine Billotte (organisateur) + bot Fireflies.ai · <strong>Confidentiel RGPD</strong> — usage interne uniquement</div>`;
   sheets.forEach(sheet => {
     const data = ATTENDANCE[sheet.key];
     const nonShort = data.participants.filter(p => !p.short);
