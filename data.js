@@ -188,7 +188,7 @@ var DEFAULT = {
   resources:[
     {sid:1,pdf:true,rec_fr:true,rec_en:true,ppt:true,trackable:false,clicks:null},
     {sid:2,pdf:true,rec_fr:true,rec_en:true,ppt:true,trackable:false,clicks:null},
-    {sid:3,pdf:true,rec_fr:false,rec_en:false,ppt:true,trackable:true,clicks:6,clicks_pres:3,clicks_guide:3},
+    {sid:3,pdf:true,rec_fr:false,rec_en:false,ppt:true,trackable:true,clicks:6,clicks_pres:3,clicks_guide:3,clicks_rec_fr:0,clicks_rec_en:0},
     {sid:4,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
     {sid:5,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
     {sid:6,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
