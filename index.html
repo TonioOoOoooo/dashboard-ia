@@ -299,17 +299,22 @@ function renderCoaching() {
 
 function renderResources() {
   const dot = v => v === true ? `<span class="res-dot" style="background:#EAF3DE;color:#27500A">✓</span>` : `<span class="res-dot" style="background:#f4f5f7;color:#9ca3af">—</span>`;
-  const dotN = (v, n) => v === true
-    ? `<span class="res-dot" style="background:#EAF3DE;color:#27500A">✓${n != null ? `&nbsp;<span style="font-size:10px;font-weight:700">${n}</span>` : ''}</span>`
-    : `<span class="res-dot" style="background:#f4f5f7;color:#9ca3af">—</span>`;
   let rows = '';
   D.resources.slice(0, 6).forEach(r => {
     const s = D.sessions.find(x => x.id === r.sid);
-    const trk = r.trackable ? `<span class="tag" style="background:#EAF3DE;color:#27500A">Shared drive ✓</span>` : `<span style="font-size:10px;color:#6b7280">OneDrive</span>`;
-    const clicksCell = (r.trackable && r.clicks != null)
-      ? `<span class="tag" style="background:#EAF3DE;color:#27500A">SharePoint ✓</span>&nbsp;<span style="font-size:11px;color:#374151">Total vues <strong>${r.clicks}</strong></span>`
-      : trk;
-    rows += `<tr style="${s.status==='planned'?'opacity:.4':''}"><td style="font-weight:500;white-space:nowrap">S${r.sid}</td><td style="font-size:11px;color:#6b7280;white-space:nowrap">${s.date}</td><td style="text-align:center">${dotN(r.pdf, r.clicks_guide)}</td><td style="text-align:center">${dot(r.rec_fr)}</td><td style="text-align:center">${dot(r.rec_en)}</td><td style="text-align:center">${dotN(r.ppt, r.clicks_pres)}</td><td style="text-align:center">${clicksCell}</td></tr>`;
+    let trkCell = '';
+    if (!r.trackable) {
+      trkCell = `<span style="font-size:10px;color:#6b7280">OneDrive</span>`;
+    } else if (r.clicks != null) {
+      const parts = [];
+      if (r.clicks_guide != null) parts.push(`Prompt\u00a0: ${r.clicks_guide}`);
+      if (r.clicks_pres  != null) parts.push(`Présentation\u00a0: ${r.clicks_pres}`);
+      parts.push(`Total\u00a0: <strong>${r.clicks}</strong>`);
+      trkCell = `<span class="tag" style="background:#EAF3DE;color:#27500A">SharePoint ✓</span><br><span style="font-size:10px;color:#6b7280;line-height:1.8">${parts.join(' · ')}</span>`;
+    } else {
+      trkCell = `<span class="tag" style="background:#EAF3DE;color:#27500A">SharePoint ✓</span>`;
+    }
+    rows += `<tr style="${s.status==='planned'?'opacity:.4':''}"><td style="font-weight:500;white-space:nowrap">S${r.sid}</td><td style="font-size:11px;color:#6b7280;white-space:nowrap">${s.date}</td><td style="text-align:center">${dot(r.pdf)}</td><td style="text-align:center">${dot(r.rec_fr)}</td><td style="text-align:center">${dot(r.rec_en)}</td><td style="text-align:center">${dot(r.ppt)}</td><td style="text-align:center">${trkCell}</td></tr>`;
   });
   const catColor = {'Setup':'#185FA5','Email':'#3B6D11','Réunions':'#854F0B'};
   let tipCards = '';
