@@ -164,6 +164,28 @@ var ATTENDANCE = {
 };
 
 // ================================================================
+// ENTITY MAPPING (domaine email → entité)
+// ================================================================
+var ENTITY_MAP = {
+  'vinci-energies.com': 'VINCI Energies',
+  'cegelec.com':        'Cegelec',
+  'axians.com':         'Axians',
+  'axians.es':          'Axians',
+  'omexom.com':         'Omexom',
+  'actemium.com':       'Actemium',
+  'sisnergy.com.br':    'Sisnergy',
+};
+var ENTITY_COLORS = {
+  'VINCI Energies': '#185FA5',
+  'Cegelec':        '#3B6D11',
+  'Axians':         '#854F0B',
+  'Omexom':         '#6B3F99',
+  'Actemium':       '#C0562A',
+  'Sisnergy':       '#1A7A6E',
+  'Other':          '#9ca3af',
+};
+
+// ================================================================
 // MUTABLE DATA
 // ================================================================
 var DEFAULT = {
