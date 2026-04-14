@@ -14,6 +14,10 @@ var AI_TIPS = [
   {n:3,title:'Morning Email Triage',date:'Sem. 31 mars 2026',cat:'Email'},
   {n:4,title:'Schedule Your Daily Briefing',date:'Sem. 31 mars 2026',cat:'Email'},
   {n:5,title:'Email → Meeting in 3 Clicks',date:'Sem. 31 mars 2026',cat:'Réunions'},
+  {n:6,title:'Catch Up on a Channel in 8 Lines',date:'Sem. 7 avr. 2026',cat:'Teams'},
+  {n:7,title:'Prepare Your Meeting in 60 Seconds',date:'Sem. 7 avr. 2026',cat:'Réunions'},
+  {n:8,title:'Turn Your Meeting Into Decisions',date:'Sem. 7 avr. 2026',cat:'Réunions'},
+  {n:9,title:'Follow-Up Email in 1 Click',date:'Sem. 7 avr. 2026',cat:'Email'},
 ];
 
 var PILOT_TEAM = [
