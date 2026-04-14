@@ -9,15 +9,15 @@ var PWD = 'VINCI-IA-2026'; // Modifier ici pour changer le mot de passe
 var CONTRACT = {total:18, monthly:3, period:'Avr → Sept 2026', people:6};
 
 var AI_TIPS = [
-  {n:1,title:'Personalize Copilot',date:'Sem. 31 mars 2026',cat:'Setup'},
-  {n:2,title:'Clone Your Writing Style',date:'Sem. 31 mars 2026',cat:'Email'},
-  {n:3,title:'Morning Email Triage',date:'Sem. 31 mars 2026',cat:'Email'},
-  {n:4,title:'Schedule Your Daily Briefing',date:'Sem. 31 mars 2026',cat:'Email'},
-  {n:5,title:'Email → Meeting in 3 Clicks',date:'Sem. 31 mars 2026',cat:'Réunions'},
+  {n:1,title:'Personalize Copilot',date:'Sem. 31 mars 2026',cat:'Copilot'},
+  {n:2,title:'Clone Your Writing Style',date:'Sem. 31 mars 2026',cat:'Outlook'},
+  {n:3,title:'Morning Email Triage',date:'Sem. 31 mars 2026',cat:'Outlook'},
+  {n:4,title:'Schedule Your Daily Briefing',date:'Sem. 31 mars 2026',cat:'Outlook'},
+  {n:5,title:'Email → Meeting in 3 Clicks',date:'Sem. 31 mars 2026',cat:'Outlook'},
   {n:6,title:'Catch Up on a Channel in 8 Lines',date:'Sem. 7 avr. 2026',cat:'Teams'},
-  {n:7,title:'Prepare Your Meeting in 60 Seconds',date:'Sem. 7 avr. 2026',cat:'Réunions'},
-  {n:8,title:'Turn Your Meeting Into Decisions',date:'Sem. 7 avr. 2026',cat:'Réunions'},
-  {n:9,title:'Follow-Up Email in 1 Click',date:'Sem. 7 avr. 2026',cat:'Email'},
+  {n:7,title:'Prepare Your Meeting in 60 Seconds',date:'Sem. 7 avr. 2026',cat:'Teams'},
+  {n:8,title:'Turn Your Meeting Into Decisions',date:'Sem. 7 avr. 2026',cat:'Teams'},
+  {n:9,title:'Follow-Up Email in 1 Click',date:'Sem. 7 avr. 2026',cat:'Teams'},
 ];
 
 var PILOT_TEAM = [
