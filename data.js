@@ -329,7 +329,7 @@ var DEFAULT = {
     {id:3,name:'DE OLIVEIRA-CEZAR Paula',tag:'',h:0.5,n:1,last:'7 avr. 2026',next:'À confirmer',content:'PPT · Suivi dossiers · Garanties hors bilan · M&A 14 slides',urgent:false},
     {id:4,name:'Florent Jannier',tag:'',h:0.5,n:1,last:'7 avr. 2026',next:'À confirmer',content:'Veille IA multi-pays · Vérification dates',urgent:false},
     {id:5,name:'Sophie Frémont',tag:'Sponsor',h:0.5,n:1,last:'7 avr. 2026',next:'À confirmer',content:'Agent triage email matinal · GPT-4 Think Deeper (7h)',urgent:false},
-    {id:6,name:'Burke David',tag:'',h:0,n:0,last:'—',next:'Réunion prévue le 9 avr. 2026',content:'—',urgent:false},
+    {id:6,name:'Burke David',tag:'',h:0.5,n:1,last:'9 avr. 2026',next:'À confirmer',content:'Découverte problème licence · Personnalisation Copilot abordée (instructions personnalisées, style bilingue) — impossible à finaliser sans licence',urgent:false},
   ],
   resources:[
     {sid:1,pdf:true,rec_fr:true,rec_en:true,ppt:true,trackable:false,clicks:null},
