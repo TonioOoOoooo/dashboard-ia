@@ -186,6 +186,126 @@ var ENTITY_COLORS = {
 };
 
 // ================================================================
+// DASHBOARD RULES — seuils et règles métier
+// ================================================================
+var DASHBOARD_RULES = {
+  // Seuil en minutes en-dessous duquel une présence est "short"
+  short_minutes_threshold: 2,
+  // Ratio EN/(FR+EN) pour classifier une entité comme "Mixte"
+  mixte_ratio_min: 0.25,
+  mixte_ratio_max: 0.75,
+  // Taux de réponse satisfaction en-dessous duquel une alerte visuelle est affichée
+  low_response_rate_threshold: 0.15,
+  // Nombre total de sessions du programme (pour les KPIs)
+  total_sessions: 12,
+};
+
+// ================================================================
+// DASHBOARD LABELS — textes et libellés configurables
+// ================================================================
+var DASHBOARD_LABELS = {
+  entities: {
+    section_title:        'Diffusion par entité — déduction depuis les domaines email',
+    section_title_table:  'Tableau détaillé par entité',
+    chart_unique:         'Personnes uniques par entité',
+    chart_cumul:          'Présences cumulées (FR / EN)',
+    kpi_active:           'Entités actives',
+    kpi_unique:           'Participants uniques (hors short)',
+    kpi_top:              'Entité la plus représentée',
+    kpi_returning:        'Participants 3 sessions+',
+    kpi_all_active:       'toutes actives',
+    col_entity:           'Entité',
+    col_unique:           'Uniques',
+    col_pct:              '% uniques',
+    col_fr:               'FR',
+    col_en:               'EN',
+    col_presences:        'Présences',
+    col_avg_min:          'Moy. min',
+    col_2plus:            '≥ 2 sess.',
+    col_3plus:            '≥ 3 sess.',
+    col_format:           'Format',
+    col_short:            'Short*',
+    short_only_badge:     'short only',
+    format_fr:            'FR',
+    format_en:            'EN',
+    format_mixte:         'Mixte',
+    insights_title:       'Insights — Diffusion par entité',
+    methodology_note:     '* <strong>Short</strong> : départs &lt; 2 min (probable confusion FR/EN) — exclus de toutes les métriques de participation.<br><strong>Entités actives</strong> : au moins 1 participant non-short · <strong>Entités observées</strong> : détectées au total, y compris short-only.<br>L\'entité est déduite du domaine email. Domaine non mappé → classé « Other ».<br><em>Uniques</em> = personnes distinctes (email) · <em>Présences</em> = total lignes non-short · <em>Format</em> : FR / EN / Mixte selon répartition des présences.',
+  },
+  coaching: {
+    section_title:        'Coaching holding — contrat 18h · 6 personnes · Avr→Sept 2026',
+    kpi_budget:           'Budget total',
+    kpi_used:             'Utilisées',
+    kpi_remaining:        'Restantes',
+    form_title:           'Saisir une session coaching',
+    form_label_hours:     'Heures effectuées',
+    form_label_date:      'Date session',
+    form_label_content:   'Contenu traité',
+    form_label_next:      'Prochain RDV',
+    col_person:           'Personne · contenu traité',
+    col_sessions:         'Sessions',
+    col_last:             'Dernière date',
+    col_next:             'Prochain RDV',
+    col_hours:            'H cumulées',
+    footer_note:          'Accompagnement cas réels · Sessions 1-to-1 ou petit groupe (3-5 pers.) · Support <24h',
+  },
+  resources: {
+    section_title:        'Livrables envoyés post-session',
+    section_tips:         'AI Tips partagés avec l\'équipe',
+    delivery_note:        'Envoi systématique : Prompt · Enregistrement FR · Enregistrement EN · Présentation<br>S1+S2 : OneDrive (non traçable) · S3+ : SharePoint VINCI (traçable dès S3)',
+    tips_note_suffix:     ' tips envoyés · Format one slide = one tip · Partagé avec Lola dans le programme de formation · Semaine du 31 mars 2026',
+    col_num:              'N°',
+    col_date:             'Date',
+    col_prompt:           'Prompt',
+    col_rec_fr:           'Rec FR',
+    col_rec_en:           'Rec EN',
+    col_pres:             'Présentation',
+    col_tracking:         'Traçabilité',
+    tracking_onedrive:    'OneDrive',
+    tracking_sharepoint:  'SharePoint',
+  },
+  attendance: {
+    section_title:        'Feuilles de présence nominatives',
+    section_note:         'Données issues des rapports Teams · Hors Antoine Billotte (organisateur) + bot Fireflies.ai · <strong>Confidentiel RGPD</strong> — usage interne uniquement',
+    short_footnote:       '* Départs &lt;2min : probable confusion de session FR/EN. Ces participants ont vraisemblablement rejoint la session EN 1h après.',
+    col_num:              '#',
+    col_name:             'Nom',
+    col_email:            'Email',
+    col_entity:           'Entité',
+    col_time:             'Temps de présence',
+  },
+  pilot: {
+    section_title:        'Équipe pilote & ambassadrice',
+    ambassador_title:     'Ambassadrice principale',
+    champion_title:       'Groupe champion — assiduité',
+    ambassador_name:      'Lola Pereira',
+    ambassador_role:      'Coordinatrice VINCI · Rôle officiel validé par Sophie Frémont',
+  },
+  satisfaction: {
+    section_title:        'Retours satisfaction — données Google Form',
+    verbatims_title:      'Thèmes demandés (verbatims)',
+    recurring_prefix:     'Sujet récurrent : ',
+    low_rate_suffix:      '%',
+  },
+};
+
+// ================================================================
+// DASHBOARD INSIGHT TEMPLATES — formulations d'insights
+// {placeholders} sont remplacés dynamiquement par le renderer
+// ================================================================
+var DASHBOARD_INSIGHT_TEMPLATES = {
+  entities: {
+    main_entity:      '{entity} reste le noyau principal de diffusion du programme, avec <strong>{pct}%</strong> des participants uniques.',
+    bilingual_yes:    '{count} entité(s) participent aux deux formats (FR & EN) : <strong>{list}</strong>.',
+    bilingual_no:     'Aucune entité ne participe aux deux formats.',
+    loyalty:          '{count} participant(s) ont suivi ≥ 3 sessions ({pct}% des uniques), signe d\'un engagement durable.',
+    english_vector:   'Le format anglais est le principal vecteur de diffusion inter-entités ({en} présences EN vs {fr} FR hors {entity}).',
+    short_exits:      '{count} départ(s) prématuré(s) exclus des métriques.',
+    short_exits_obs:  '{count} départ(s) prématuré(s) exclus des métriques · {delta} entité(s) détectée(s) uniquement via short exits.',
+  },
+};
+
+// ================================================================
 // MUTABLE DATA
 // ================================================================
 var DEFAULT = {

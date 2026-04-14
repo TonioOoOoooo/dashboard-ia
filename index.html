@@ -176,9 +176,9 @@ const totalCoachH = () => D.coaching.reduce((a, p) => a + (p.h||0), 0);
 
 function renderKPIs() {
   const done = getDone(), tp = totalPart(), sat = avgSat(), ch = totalCoachH();
-  const next = D.sessions.find(s => s.status === 'upcoming') || D.sessions.find(s => s.status === 'planned');
+  const total = DASHBOARD_RULES.total_sessions;
   document.getElementById('kpi-grid').innerHTML = `
-    <div class="kpi-card"><div class="kpi-lbl">Sessions réalisées</div><div class="kpi-val" style="color:#185FA5">${done.length}<span style="font-size:14px;color:#6b7280"> / 12</span></div><div class="kpi-sub">${Math.round(done.length/12*100)}% du programme</div></div>
+    <div class="kpi-card"><div class="kpi-lbl">Sessions réalisées</div><div class="kpi-val" style="color:#185FA5">${done.length}<span style="font-size:14px;color:#6b7280"> / ${total}</span></div><div class="kpi-sub">${Math.round(done.length/total*100)}% du programme</div></div>
     <div class="kpi-card"><div class="kpi-lbl">Participants live (cumul)</div><div class="kpi-val">${tp}</div><div class="kpi-sub">moy. ${done.length ? Math.round(tp/done.length) : 0} / session</div></div>
     <div class="kpi-card"><div class="kpi-lbl">Satisfaction moyenne</div><div class="kpi-val" style="color:#3B6D11">${sat ? sat.toFixed(1) : '—'}<span style="font-size:14px;color:#6b7280"> /5</span></div><div class="kpi-sub">${totalRep()} rép. · ${tp ? Math.round(totalRep()/tp*100) : 0}% taux</div></div>
     <div class="kpi-card"><div class="kpi-lbl">Coaching holding</div><div class="kpi-val" style="color:#854F0B">${ch.toFixed(1)}<span style="font-size:14px;color:#6b7280"> / ${CONTRACT.total}h</span></div><div class="kpi-sub">${(CONTRACT.total-ch).toFixed(1)}h restantes · ${CONTRACT.people} pers.</div></div>`;
@@ -219,13 +219,14 @@ function renderTable() {
 }
 
 function renderSat() {
+  const L = DASHBOARD_LABELS.satisfaction;
   const satBar = r => `<div class="sat-row"><div class="sat-lbl">${r.lbl}</div><div class="sat-bar"><div class="sat-fill" style="width:${r.v/5*100}%"></div></div><div class="sat-val">${r.v.toFixed(1)}</div></div>`;
   const doneSessions = D.sessions.filter(s => s.satisfaction !== null);
   let cards = '';
   doneSessions.forEach(s => {
     const total = (s.fr||0)+(s.en||0);
-    const tauxHtml = s.repondants > 0 && total > 0 && (s.repondants/total) < 0.15
-      ? ` · <span style="color:#A32D2D">taux ${Math.round(s.repondants/total*100)}%</span>` : '';
+    const tauxHtml = s.repondants > 0 && total > 0 && (s.repondants/total) < DASHBOARD_RULES.low_response_rate_threshold
+      ? ` · <span style="color:#A32D2D">taux ${Math.round(s.repondants/total*100)}${L.low_rate_suffix}</span>` : '';
     cards += `<div class="card">
       <div style="font-size:12px;font-weight:500;margin-bottom:2px">S${s.id} — ${s.date}</div>
       <div style="font-size:10px;color:#6b7280;margin-bottom:10px">${s.repondants} répondant(s) / ${total} présents${tauxHtml}</div>
@@ -233,33 +234,35 @@ function renderSat() {
       <div style="margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08);font-size:24px;font-weight:500;color:#3B6D11;text-align:center">${s.satisfaction.toFixed(1)} <span style="font-size:13px;color:#6b7280">/ 5</span></div>
     </div>`;
   });
-  let vh = '<div style="font-size:12px;font-weight:500;margin-bottom:8px">Thèmes demandés (verbatims)</div>';
+  let vh = `<div style="font-size:12px;font-weight:500;margin-bottom:8px">${L.verbatims_title}</div>`;
   VERBATIMS.forEach(v => { vh += `<div style="margin-bottom:8px"><div style="display:flex;gap:4px;align-items:center;margin-bottom:2px"><span style="font-size:10px;background:#f4f5f7;border:0.5px solid rgba(0,0,0,.1);padding:1px 6px;border-radius:8px;color:#6b7280">${v.session}</span><span style="font-size:10px;color:#6b7280">${v.from} · ${v.tag}</span></div><div class="verbatim">${v.text}</div></div>`; });
   const recurring = VERBATIMS.reduce((acc,v) => { const k=v.text.toLowerCase(); acc[k]=(acc[k]||0)+1; return acc; },{});
   const top = Object.entries(recurring).sort((a,b)=>b[1]-a[1])[0];
-  if (top && top[1]>1) vh += `<div style="font-size:10px;color:#6b7280;margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08)">Sujet récurrent : <strong>${top[0]}</strong> — ${top[1]} mentions</div>`;
+  if (top && top[1]>1) vh += `<div style="font-size:10px;color:#6b7280;margin-top:8px;padding-top:8px;border-top:0.5px solid rgba(0,0,0,.08)">${L.recurring_prefix}<strong>${top[0]}</strong> — ${top[1]} mentions</div>`;
   document.getElementById('panel-sat').innerHTML = `
-    <div class="sec-title">Retours satisfaction — données Google Form</div>
+    <div class="sec-title">${L.section_title}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1rem">${cards}</div>
     <div class="card">${vh}</div>`;
 }
 
 function renderPilot() {
+  const L = DASHBOARD_LABELS.pilot;
   let rows = '';
   PILOT_TEAM.forEach(pt => {
     const pips = Array.from({length:pt.max}, (_,i) => `<div class="pip" style="background:${i<pt.s?'#185FA5':'#e5e7eb'}"></div>`).join('');
     const satB = pt.sat ? `<span class="tag" style="background:#EAF3DE;color:#27500A;margin-left:3px">Form ✓</span>` : '';
     rows += `<div class="pilot-row"><div style="display:flex;gap:3px;align-items:center;margin-top:2px">${pips}</div><div style="flex:1"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:3px"><span>${pt.name}</span><span class="tag" style="background:#f4f5f7;color:#6b7280">${pt.role}</span>${satB}</div>${pt.notes?`<div style="font-size:10px;color:#6b7280;margin-top:1px">${pt.notes}</div>`:''}</div></div>`;
   });
-  document.getElementById('panel-pilot').innerHTML = `<div class="sec-title">Équipe pilote & ambassadrice</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem">
-    <div><div style="font-size:11px;color:#6b7280;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;font-weight:500">Ambassadrice principale</div>
-      <div class="card" style="border-left:3px solid #F5A623"><div style="font-weight:500;font-size:13px;margin-bottom:4px">Lola Pereira</div><div style="font-size:11px;color:#6b7280;margin-bottom:6px">Coordinatrice VINCI · Rôle officiel validé par Sophie Frémont</div><div style="display:flex;gap:4px;flex-wrap:wrap"><span class="tag" style="background:#FAEEDA;color:#633806">Ambassadrice pilote</span><span class="tag" style="background:#EAF3DE;color:#27500A">S1+S2+S3 FR & EN</span></div></div></div>
-    <div><div style="font-size:11px;color:#6b7280;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;font-weight:500">Groupe champion — assiduité</div>
+  document.getElementById('panel-pilot').innerHTML = `<div class="sec-title">${L.section_title}</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem">
+    <div><div style="font-size:11px;color:#6b7280;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;font-weight:500">${L.ambassador_title}</div>
+      <div class="card" style="border-left:3px solid #F5A623"><div style="font-weight:500;font-size:13px;margin-bottom:4px">${L.ambassador_name}</div><div style="font-size:11px;color:#6b7280;margin-bottom:6px">${L.ambassador_role}</div><div style="display:flex;gap:4px;flex-wrap:wrap"><span class="tag" style="background:#FAEEDA;color:#633806">Ambassadrice pilote</span><span class="tag" style="background:#EAF3DE;color:#27500A">S1+S2+S3 FR &amp; EN</span></div></div></div>
+    <div><div style="font-size:11px;color:#6b7280;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;font-weight:500">${L.champion_title}</div>
       <div class="card">${rows}</div></div>
   </div>`;
 }
 
 function renderCoaching() {
+  const L = DASHBOARD_LABELS.coaching;
   const ch = totalCoachH(), pct = Math.min(Math.round(ch/CONTRACT.total*100), 100);
   let rows = '';
   D.coaching.forEach(c => {
@@ -268,29 +271,30 @@ function renderCoaching() {
     rows += `<tr style="${c.urgent?'background:rgba(252,235,235,0.3)':''}"><td><div style="font-weight:500">${c.name}${tagHtml}</div>${c.content&&c.content!=='—'?`<div style="font-size:10px;color:#6b7280;margin-top:2px">${c.content}</div>`:''}</td><td style="text-align:center">${c.n}</td><td style="font-size:11px;color:#6b7280;white-space:nowrap">${c.last}</td><td style="font-size:11px">${nextHtml}</td><td style="text-align:center;font-weight:500;color:${c.h>0?'#185FA5':'#6b7280'}">${c.h.toFixed(1)}h</td><td style="text-align:right"><button onclick="openCoachEdit(${c.id})" style="font-size:10px;padding:2px 8px;cursor:pointer;border-radius:4px;background:#fff;border:0.5px solid #d1d5db;font-family:inherit">+ session</button></td></tr>`;
   });
   document.getElementById('panel-coaching').innerHTML = `
-    <div class="sec-title">Coaching holding — contrat 18h · 6 personnes · Avr→Sept 2026</div>
+    <div class="sec-title">${L.section_title}</div>
     <div class="card" style="margin-bottom:1rem">
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:.75rem">
-        <div><div style="font-size:11px;color:#6b7280">Budget total</div><div style="font-size:20px;font-weight:500">${CONTRACT.total}h</div><div style="font-size:10px;color:#6b7280">${CONTRACT.period}</div></div>
-        <div><div style="font-size:11px;color:#6b7280">Utilisées</div><div style="font-size:20px;font-weight:500;color:#185FA5">${ch.toFixed(1)}h</div><div style="font-size:10px;color:#6b7280">${pct}% du contrat</div></div>
-        <div><div style="font-size:11px;color:#6b7280">Restantes</div><div style="font-size:20px;font-weight:500;color:#3B6D11">${(CONTRACT.total-ch).toFixed(1)}h</div><div style="font-size:10px;color:#6b7280">${CONTRACT.monthly}h/mois max</div></div>
+        <div><div style="font-size:11px;color:#6b7280">${L.kpi_budget}</div><div style="font-size:20px;font-weight:500">${CONTRACT.total}h</div><div style="font-size:10px;color:#6b7280">${CONTRACT.period}</div></div>
+        <div><div style="font-size:11px;color:#6b7280">${L.kpi_used}</div><div style="font-size:20px;font-weight:500;color:#185FA5">${ch.toFixed(1)}h</div><div style="font-size:10px;color:#6b7280">${pct}% du contrat</div></div>
+        <div><div style="font-size:11px;color:#6b7280">${L.kpi_remaining}</div><div style="font-size:20px;font-weight:500;color:#3B6D11">${(CONTRACT.total-ch).toFixed(1)}h</div><div style="font-size:10px;color:#6b7280">${CONTRACT.monthly}h/mois max</div></div>
       </div>
       <div class="h-bar"><div class="h-fill" style="width:${pct}%"></div></div>
-      <div style="font-size:10px;color:#6b7280;text-align:right;margin-top:2px">Accompagnement cas réels · Sessions 1-to-1 ou petit groupe (3-5 pers.) · Support <24h</div>
+      <div style="font-size:10px;color:#6b7280;text-align:right;margin-top:2px">${L.footer_note}</div>
     </div>
     <div style="overflow-x:auto;border:0.5px solid rgba(0,0,0,.1);border-radius:8px;background:#fff">
-      <table class="tbl"><thead><tr><th>Personne · contenu traité</th><th style="text-align:center">Sessions</th><th>Dernière date</th><th>Prochain RDV</th><th style="text-align:center">H cumulées</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+      <table class="tbl"><thead><tr><th>${L.col_person}</th><th style="text-align:center">${L.col_sessions}</th><th>${L.col_last}</th><th>${L.col_next}</th><th style="text-align:center">${L.col_hours}</th><th></th></tr></thead><tbody>${rows}</tbody></table>
     </div>
     <div class="coach-form" id="coach-form">
-      <div style="font-size:12px;font-weight:500;margin-bottom:10px" id="coach-form-title">Saisir une session coaching</div>
-      <div class="frow"><div><div class="flbl">Heures effectuées</div><input type="number" id="coach-h" class="inp" min="0.5" max="3" step="0.5" placeholder="Ex: 1.5"></div><div><div class="flbl">Date session</div><input type="text" id="coach-date" class="inp" placeholder="Ex: 10 avr. 2026"></div></div>
-      <div style="margin-bottom:10px"><div class="flbl">Contenu traité</div><input type="text" id="coach-content" class="inp" placeholder="Cas pratiques couverts"></div>
-      <div style="margin-bottom:10px"><div class="flbl">Prochain RDV</div><input type="text" id="coach-next" class="inp" placeholder="Ex: 24 avr. 2026 — 14h"></div>
+      <div style="font-size:12px;font-weight:500;margin-bottom:10px" id="coach-form-title">${L.form_title}</div>
+      <div class="frow"><div><div class="flbl">${L.form_label_hours}</div><input type="number" id="coach-h" class="inp" min="0.5" max="3" step="0.5" placeholder="Ex: 1.5"></div><div><div class="flbl">${L.form_label_date}</div><input type="text" id="coach-date" class="inp" placeholder="Ex: 10 avr. 2026"></div></div>
+      <div style="margin-bottom:10px"><div class="flbl">${L.form_label_content}</div><input type="text" id="coach-content" class="inp" placeholder="Cas pratiques couverts"></div>
+      <div style="margin-bottom:10px"><div class="flbl">${L.form_label_next}</div><input type="text" id="coach-next" class="inp" placeholder="Ex: 24 avr. 2026 — 14h"></div>
       <div style="display:flex;gap:8px"><button onclick="saveCoach()" style="font-size:12px;padding:6px 14px;background:#0A1628;color:#F5A623;border:0.5px solid #F5A623;border-radius:6px;font-family:inherit">Enregistrer</button><button onclick="closeCoachForm()" style="font-size:12px;padding:6px 14px;background:#fff;border:0.5px solid #d1d5db;color:#6b7280;font-family:inherit">Annuler</button></div>
     </div>`;
 }
 
 function renderResources() {
+  const L = DASHBOARD_LABELS.resources;
   const dot  = v => v === true
     ? `<span class="res-dot" style="background:#EAF3DE;color:#27500A">✓</span>`
     : `<span class="res-dot" style="background:#f4f5f7;color:#9ca3af">—</span>`;
@@ -308,8 +312,8 @@ function renderResources() {
     const recEnCell  = tracked ? vues(r.clicks_rec_en) : dot(r.rec_en);
     const presCell   = tracked ? vues(r.clicks_pres)   : dot(r.ppt);
     const trkCell    = !r.trackable
-      ? `<span style="font-size:10px;color:#6b7280">OneDrive</span>`
-      : `<span style="font-size:10px;color:#27500A;font-weight:500">SharePoint</span>`;
+      ? `<span style="font-size:10px;color:#6b7280">${L.tracking_onedrive}</span>`
+      : `<span style="font-size:10px;color:#27500A;font-weight:500">${L.tracking_sharepoint}</span>`;
     rows += `<tr style="${s.status==='planned'?'opacity:.4':''}"><td style="font-weight:500;white-space:nowrap">S${r.sid}</td><td style="font-size:11px;color:#6b7280;white-space:nowrap">${s.date}</td><td style="text-align:center">${promptCell}</td><td style="text-align:center">${recFrCell}</td><td style="text-align:center">${recEnCell}</td><td style="text-align:center">${presCell}</td><td style="text-align:center">${trkCell}</td></tr>`;
   });
   const catColor = {'Setup':'#185FA5','Email':'#3B6D11','Réunions':'#854F0B'};
@@ -318,13 +322,13 @@ function renderResources() {
     tipCards += `<div class="tip-card"><div class="tip-n">${t.n}</div><div style="flex:1"><div style="font-weight:500">${t.title}</div><div style="font-size:10px;color:#6b7280;margin-top:1px">${t.date}</div></div><span class="tag" style="background:#f4f5f7;color:${catColor[t.cat]||'#6b7280'};border:0.5px solid rgba(0,0,0,.08)">${t.cat}</span><span style="color:#3B6D11;font-size:12px;flex-shrink:0">✓</span></div>`;
   });
   document.getElementById('panel-res').innerHTML = `
-    <div class="sec-title">Livrables envoyés post-session</div>
+    <div class="sec-title">${L.section_title}</div>
     <div class="card" style="margin-bottom:1rem">
-      <div style="font-size:11px;color:#6b7280;margin-bottom:8px">Envoi systématique : Prompt · Enregistrement FR · Enregistrement EN · Présentation<br>S1+S2 : OneDrive (non traçable) · S3+ : SharePoint VINCI (traçable dès S3)</div>
-      <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>N°</th><th>Date</th><th style="text-align:center">Prompt</th><th style="text-align:center">Rec FR</th><th style="text-align:center">Rec EN</th><th style="text-align:center">Présentation</th><th style="text-align:center">Traçabilité</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div style="font-size:11px;color:#6b7280;margin-bottom:8px">${L.delivery_note}</div>
+      <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>${L.col_num}</th><th>${L.col_date}</th><th style="text-align:center">${L.col_prompt}</th><th style="text-align:center">${L.col_rec_fr}</th><th style="text-align:center">${L.col_rec_en}</th><th style="text-align:center">${L.col_pres}</th><th style="text-align:center">${L.col_tracking}</th></tr></thead><tbody>${rows}</tbody></table></div>
     </div>
-    <div class="sec-title">AI Tips partagés avec l'équipe</div>
-    <div class="card"><div style="font-size:11px;color:#6b7280;margin-bottom:10px">${AI_TIPS.length} tips envoyés · Format one slide = one tip · Partagé avec Lola dans le programme de formation · Semaine du 31 mars 2026</div>${tipCards}</div>`;
+    <div class="sec-title">${L.section_tips}</div>
+    <div class="card"><div style="font-size:11px;color:#6b7280;margin-bottom:10px">${AI_TIPS.length}${L.tips_note_suffix}</div>${tipCards}</div>`;
 }
 
 // ================================================================
@@ -400,66 +404,67 @@ function buildEntityStats() {
 let entityChartInst1 = null, entityChartInst2 = null;
 
 function renderEntities() {
-  const stats = buildEntityStats();
+  const L   = DASHBOARD_LABELS.entities;
+  const R   = DASHBOARD_RULES;
+  const T   = DASHBOARD_INSIGHT_TEMPLATES.entities;
+  const tpl = (str, vals) => str.replace(/\{(\w+)\}/g, (_, k) => vals[k] !== undefined ? vals[k] : '{' + k + '}');
+
+  const stats    = buildEntityStats();
   const entities = Object.keys(stats).sort((a, b) => stats[b].unique_people - stats[a].unique_people);
 
-  // ── Métriques agrégées ──────────────────────────────────────────
-  const totalUnique   = entities.reduce((s, e) => s + stats[e].unique_people, 0);
-  const totalNet      = entities.reduce((s, e) => s + stats[e].net_count, 0);
-  const totalShort    = entities.reduce((s, e) => s + stats[e].short_count, 0);
-  const nbActive      = entities.filter(e => stats[e].unique_people > 0).length;
-  const nbObserved    = entities.filter(e => stats[e].raw_count > 0).length;
-  const topEntity     = entities.find(e => stats[e].unique_people > 0) || '—';
-  const totalR3       = entities.reduce((s, e) => s + stats[e].returning_3plus, 0);
-  const r3Pct         = totalUnique > 0 ? Math.round(totalR3 / totalUnique * 100) : 0;
+  const totalUnique = entities.reduce((s, e) => s + stats[e].unique_people, 0);
+  const totalNet    = entities.reduce((s, e) => s + stats[e].net_count, 0);
+  const totalShort  = entities.reduce((s, e) => s + stats[e].short_count, 0);
+  const nbActive    = entities.filter(e => stats[e].unique_people > 0).length;
+  const nbObserved  = entities.filter(e => stats[e].raw_count > 0).length;
+  const topEntity   = entities.find(e => stats[e].unique_people > 0) || '—';
+  const totalR3     = entities.reduce((s, e) => s + stats[e].returning_3plus, 0);
+  const r3Pct       = totalUnique > 0 ? Math.round(totalR3 / totalUnique * 100) : 0;
 
-  // ── KPIs ────────────────────────────────────────────────────────
   const kpiHtml = `
     <div class="kpi-grid" style="margin-bottom:1rem">
-      <div class="kpi-card"><div class="kpi-lbl">Entités actives</div><div class="kpi-val" style="color:#185FA5">${nbActive}</div><div class="kpi-sub">${nbObserved > nbActive ? nbObserved + ' observées au total' : 'toutes actives'}</div></div>
-      <div class="kpi-card"><div class="kpi-lbl">Participants uniques (hors short)</div><div class="kpi-val">${totalUnique}</div><div class="kpi-sub">${totalNet} présences cumulées</div></div>
-      <div class="kpi-card"><div class="kpi-lbl">Entité la plus représentée</div><div class="kpi-val" style="font-size:15px;font-weight:500;color:${ENTITY_COLORS[topEntity]||'#185FA5'}">${topEntity}</div><div class="kpi-sub">${stats[topEntity] ? stats[topEntity].unique_people : 0} personnes uniques</div></div>
-      <div class="kpi-card"><div class="kpi-lbl">Participants 3 sessions+</div><div class="kpi-val" style="color:#3B6D11">${totalR3}</div><div class="kpi-sub">${r3Pct}% des uniques</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">${L.kpi_active}</div><div class="kpi-val" style="color:#185FA5">${nbActive}</div><div class="kpi-sub">${nbObserved > nbActive ? nbObserved + ' observées au total' : L.kpi_all_active}</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">${L.kpi_unique}</div><div class="kpi-val">${totalUnique}</div><div class="kpi-sub">${totalNet} présences cumulées</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">${L.kpi_top}</div><div class="kpi-val" style="font-size:15px;font-weight:500;color:${ENTITY_COLORS[topEntity]||'#185FA5'}">${topEntity}</div><div class="kpi-sub">${stats[topEntity] ? stats[topEntity].unique_people : 0} personnes uniques</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">${L.kpi_returning}</div><div class="kpi-val" style="color:#3B6D11">${totalR3}</div><div class="kpi-sub">${r3Pct}% des uniques</div></div>
     </div>`;
 
-  // ── Charts : labels = entités actives uniquement ─────────────────
   const chartLabels = entities.filter(e => stats[e].unique_people > 0);
-  const chartBg = chartLabels.map(e => ENTITY_COLORS[e] || '#9ca3af');
+  const chartBg     = chartLabels.map(e => ENTITY_COLORS[e] || '#9ca3af');
 
   const chartHtml = `
     <div class="two-col" style="margin-bottom:1rem">
       <div class="card">
-        <div style="font-size:11px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Personnes uniques par entité</div>
+        <div style="font-size:11px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">${L.chart_unique}</div>
         <div style="position:relative;height:200px"><canvas id="entityChart1"></canvas></div>
       </div>
       <div class="card">
-        <div style="font-size:11px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Présences cumulées (FR / EN)</div>
+        <div style="font-size:11px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">${L.chart_cumul}</div>
         <div style="position:relative;height:200px"><canvas id="entityChart2"></canvas></div>
       </div>
     </div>`;
 
-  // ── Tableau ──────────────────────────────────────────────────────
   let tableRows = '';
   entities.forEach(entity => {
     const e = stats[entity];
     if (e.raw_count === 0) return;
     const isShortOnly = e.unique_people === 0 && e.short_count > 0;
     const color = ENTITY_COLORS[entity] || '#9ca3af';
-    const pct = totalUnique > 0 && e.unique_people > 0 ? Math.round(e.unique_people / totalUnique * 100) : 0;
-
+    const pct   = totalUnique > 0 && e.unique_people > 0 ? Math.round(e.unique_people / totalUnique * 100) : 0;
     let formatDom = '—';
     if (e.net_count > 0) {
       const ratio = e.en_count / e.net_count;
-      if (e.fr_count > 0 && e.en_count > 0 && ratio >= 0.25 && ratio <= 0.75) formatDom = '<span class="badge" style="background:#f4f5f7;color:#6b7280">Mixte</span>';
-      else if (e.fr_count >= e.en_count) formatDom = '<span class="badge" style="background:#E6F1FB;color:#185FA5">FR</span>';
-      else formatDom = '<span class="badge" style="background:#f4f5f7;color:#85B7EB;border:0.5px solid #85B7EB44">EN</span>';
+      if (e.fr_count > 0 && e.en_count > 0 && ratio >= R.mixte_ratio_min && ratio <= R.mixte_ratio_max)
+        formatDom = `<span class="badge" style="background:#f4f5f7;color:#6b7280">${L.format_mixte}</span>`;
+      else if (e.fr_count >= e.en_count)
+        formatDom = `<span class="badge" style="background:#E6F1FB;color:#185FA5">${L.format_fr}</span>`;
+      else
+        formatDom = `<span class="badge" style="background:#f4f5f7;color:#85B7EB;border:0.5px solid #85B7EB44">${L.format_en}</span>`;
     }
-
-    const rowStyle = isShortOnly ? 'opacity:.45;' : '';
+    const rowStyle   = isShortOnly ? 'opacity:.45;' : '';
     const entityCell = isShortOnly
-      ? `<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span><span style="color:#9ca3af">${entity}</span><span class="badge" style="background:#f4f5f7;color:#9ca3af;margin-left:2px">short only</span></span>`
+      ? `<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span><span style="color:#9ca3af">${entity}</span><span class="badge" style="background:#f4f5f7;color:#9ca3af;margin-left:2px">${L.short_only_badge}</span></span>`
       : `<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span><strong>${entity}</strong></span>`;
-
     tableRows += `<tr style="${rowStyle}">
       <td style="white-space:nowrap">${entityCell}</td>
       <td style="text-align:center;font-weight:500">${e.unique_people > 0 ? e.unique_people : '—'}</td>
@@ -477,124 +482,82 @@ function renderEntities() {
 
   const tableHtml = `
     <div style="overflow-x:auto;border:0.5px solid rgba(0,0,0,.1);border-radius:8px;background:#fff;margin-bottom:1rem">
-      <table class="tbl">
-        <thead><tr>
-          <th>Entité</th>
-          <th style="text-align:center">Uniques</th>
-          <th style="text-align:center">% uniques</th>
-          <th style="text-align:center">FR</th>
-          <th style="text-align:center">EN</th>
-          <th style="text-align:center">Présences</th>
-          <th style="text-align:center">Moy. min</th>
-          <th style="text-align:center">≥ 2 sess.</th>
-          <th style="text-align:center">≥ 3 sess.</th>
-          <th style="text-align:center">Format</th>
-          <th style="text-align:center">Short*</th>
-        </tr></thead>
-        <tbody>${tableRows}</tbody>
-      </table>
+      <table class="tbl"><thead><tr>
+        <th>${L.col_entity}</th>
+        <th style="text-align:center">${L.col_unique}</th>
+        <th style="text-align:center">${L.col_pct}</th>
+        <th style="text-align:center">${L.col_fr}</th>
+        <th style="text-align:center">${L.col_en}</th>
+        <th style="text-align:center">${L.col_presences}</th>
+        <th style="text-align:center">${L.col_avg_min}</th>
+        <th style="text-align:center">${L.col_2plus}</th>
+        <th style="text-align:center">${L.col_3plus}</th>
+        <th style="text-align:center">${L.col_format}</th>
+        <th style="text-align:center">${L.col_short}</th>
+      </tr></thead><tbody>${tableRows}</tbody></table>
     </div>`;
 
-  // ── Insights ────────────────────────────────────────────────────
   const topPct = stats[topEntity] && totalUnique > 0 ? Math.round(stats[topEntity].unique_people / totalUnique * 100) : 0;
-  const dominated = topEntity !== '—'
-    ? `<strong>${topEntity}</strong> reste le noyau principal de diffusion du programme, avec <strong>${topPct}%</strong> des participants uniques.`
-    : '';
-
+  const dominated = topEntity !== '—' ? tpl(T.main_entity, {entity: `<strong>${topEntity}</strong>`, pct: topPct}) : '';
   const bilingualEntities = entities.filter(e => stats[e].fr_count > 0 && stats[e].en_count > 0);
   const bilingualHtml = bilingualEntities.length > 0
-    ? `${bilingualEntities.length} entité(s) participent aux deux formats (FR & EN) : <strong>${bilingualEntities.join(', ')}</strong>.`
-    : 'Aucune entité ne participe aux deux formats.';
-
-  const enOther = entities.filter(e => e !== 'VINCI Energies').reduce((s, e) => s + stats[e].en_count, 0);
-  const frOther = entities.filter(e => e !== 'VINCI Energies').reduce((s, e) => s + stats[e].fr_count, 0);
+    ? tpl(T.bilingual_yes, {count: bilingualEntities.length, list: bilingualEntities.join(', ')})
+    : T.bilingual_no;
+  const enOther = entities.filter(e => e !== topEntity).reduce((s, e) => s + stats[e].en_count, 0);
+  const frOther = entities.filter(e => e !== topEntity).reduce((s, e) => s + stats[e].fr_count, 0);
   const enVectorHtml = enOther > frOther
-    ? `<div class="pilot-row"><div class="pip" style="background:#85B7EB"></div><div>Le format anglais est le principal vecteur de diffusion inter-entités (${enOther} présences EN vs ${frOther} FR hors ${topEntity === 'VINCI Energies' ? 'VINCI Energies' : topEntity}).</div></div>`
+    ? `<div class="pilot-row"><div class="pip" style="background:#85B7EB"></div><div>${tpl(T.english_vector, {en: enOther, fr: frOther, entity: topEntity})}</div></div>`
     : '';
+  const shortInsight = nbObserved > nbActive
+    ? tpl(T.short_exits_obs, {count: totalShort, delta: nbObserved - nbActive})
+    : tpl(T.short_exits, {count: totalShort});
 
   const insightsHtml = `
     <div class="card" style="margin-bottom:1rem;border-left:3px solid #F5A623">
-      <div style="font-size:12px;font-weight:500;margin-bottom:8px">Insights — Diffusion par entité</div>
+      <div style="font-size:12px;font-weight:500;margin-bottom:8px">${L.insights_title}</div>
       <div class="pilot-row"><div class="pip" style="background:#185FA5"></div><div>${dominated}</div></div>
       <div class="pilot-row"><div class="pip" style="background:#3B6D11"></div><div>${bilingualHtml}</div></div>
-      <div class="pilot-row"><div class="pip" style="background:#854F0B"></div><div>${totalR3} participant(s) ont suivi ≥ 3 sessions (${r3Pct}% des uniques), signe d'un engagement durable.</div></div>
+      <div class="pilot-row"><div class="pip" style="background:#854F0B"></div><div>${tpl(T.loyalty, {count: totalR3, pct: r3Pct})}</div></div>
       ${enVectorHtml}
-      <div class="pilot-row"><div class="pip" style="background:#9ca3af"></div><div>${totalShort} départ(s) prématuré(s) exclus des métriques${nbObserved > nbActive ? ` · ${nbObserved - nbActive} entité(s) détectée(s) uniquement via short exits` : ''}.</div></div>
-    </div>`;
-
-  const noteHtml = `
-    <div style="font-size:10px;color:#9ca3af;padding:.5rem 0">
-      * <strong>Short</strong> : départs &lt; 2 min (probable confusion FR/EN) — exclus de toutes les métriques de participation.<br>
-      <strong>Entités actives</strong> : au moins 1 participant non-short · <strong>Entités observées</strong> : détectées au total, y compris short-only.<br>
-      L'entité est déduite du domaine email. Domaine non mappé → classé « Other ».<br>
-      <em>Uniques</em> = personnes distinctes (email) · <em>Présences</em> = total lignes non-short · <em>Format</em> : FR / EN / Mixte selon répartition des présences.
+      <div class="pilot-row"><div class="pip" style="background:#9ca3af"></div><div>${shortInsight}</div></div>
     </div>`;
 
   document.getElementById('panel-entities').innerHTML = `
-    <div class="sec-title">Diffusion par entité — déduction depuis les domaines email</div>
+    <div class="sec-title">${L.section_title}</div>
     ${kpiHtml}
     ${chartHtml}
-    <div class="sec-title">Tableau détaillé par entité</div>
+    <div class="sec-title">${L.section_title_table}</div>
     ${tableHtml}
     ${insightsHtml}
-    ${noteHtml}`;
+    <div style="font-size:10px;color:#9ca3af;padding:.5rem 0">${L.methodology_note}</div>`;
 
   if (entityChartInst1) { entityChartInst1.destroy(); entityChartInst1 = null; }
   if (entityChartInst2) { entityChartInst2.destroy(); entityChartInst2 = null; }
 
   entityChartInst1 = new Chart(document.getElementById('entityChart1'), {
     type: 'bar',
-    data: {
-      labels: chartLabels,
-      datasets: [{
-        label: 'Uniques',
-        data: chartLabels.map(e => stats[e].unique_people),
-        backgroundColor: chartBg,
-        borderRadius: 4,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ` ${ctx.raw} personnes` } } },
-      scales: {
-        x: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#888', stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
-        y: { ticks: { font: { size: 10 }, color: '#444' }, grid: { display: false } }
-      }
-    }
+    data: { labels: chartLabels, datasets: [{ label: 'Uniques', data: chartLabels.map(e => stats[e].unique_people), backgroundColor: chartBg, borderRadius: 4 }] },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ` ${ctx.raw} personnes` } } }, scales: { x: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#888', stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } }, y: { ticks: { font: { size: 10 }, color: '#444' }, grid: { display: false } } } }
   });
 
   entityChartInst2 = new Chart(document.getElementById('entityChart2'), {
     type: 'bar',
-    data: {
-      labels: chartLabels,
-      datasets: [
-        { label: 'FR', data: chartLabels.map(e => stats[e].fr_count), backgroundColor: '#185FA5', stack: 'p', borderRadius: 2 },
-        { label: 'EN', data: chartLabels.map(e => stats[e].en_count), backgroundColor: '#85B7EB', stack: 'p', borderRadius: 2 },
-      ]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, labels: { font: { size: 10 }, color: '#888' } } },
-      scales: {
-        x: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, color: '#888', stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
-        y: { stacked: true, ticks: { font: { size: 10 }, color: '#444' }, grid: { display: false } }
-      }
-    }
+    data: { labels: chartLabels, datasets: [
+      { label: 'FR', data: chartLabels.map(e => stats[e].fr_count), backgroundColor: '#185FA5', stack: 'p', borderRadius: 2 },
+      { label: 'EN', data: chartLabels.map(e => stats[e].en_count), backgroundColor: '#85B7EB', stack: 'p', borderRadius: 2 },
+    ]},
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { font: { size: 10 }, color: '#888' } } }, scales: { x: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 }, color: '#888', stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } }, y: { stacked: true, ticks: { font: { size: 10 }, color: '#444' }, grid: { display: false } } } }
   });
 }
 
 function renderAttendance() {
-  const sheets = [
-    {key:'S1_FR', label:'Session #1 — Français', color:'#185FA5'},
-    {key:'S1_EN', label:'Session #1 — English', color:'#85B7EB'},
-    {key:'S2_FR', label:'Session #2 — Français', color:'#185FA5'},
-    {key:'S2_EN', label:'Session #2 — English', color:'#85B7EB'},
-    {key:'S3_FR', label:'Session #3 — Français', color:'#185FA5'},
-    {key:'S3_EN', label:'Session #3 — English', color:'#85B7EB'},
-  ];
-  let html = `<div class="sec-title">Feuilles de présence nominatives</div><div style="font-size:11px;color:#6b7280;margin-bottom:1rem">Données issues des rapports Teams · Hors Antoine Billotte (organisateur) + bot Fireflies.ai · <strong>Confidentiel RGPD</strong> — usage interne uniquement</div>`;
+  const L = DASHBOARD_LABELS.attendance;
+  const sheets = Object.keys(ATTENDANCE).map(key => ({
+    key,
+    label: ATTENDANCE[key].session,
+    color: key.endsWith('_FR') ? '#185FA5' : '#85B7EB',
+  }));
+  let html = `<div class="sec-title">${L.section_title}</div><div style="font-size:11px;color:#6b7280;margin-bottom:1rem">${L.section_note}</div>`;
   sheets.forEach(sheet => {
     const data = ATTENDANCE[sheet.key];
     const nonShort = data.participants.filter(p => !p.short);
@@ -615,11 +578,11 @@ function renderAttendance() {
         ${shorts.length>0?`<span style="font-size:11px;color:#9ca3af">${shorts.length} départ(s) prématuré(s)*</span>`:''}
       </div>
       <div style="overflow-x:auto;border:0.5px solid rgba(0,0,0,.1);border-radius:8px;background:#fff">
-        <table class="att-tbl"><thead><tr><th>#</th><th>Nom</th><th>Email</th><th>Entité</th><th style="text-align:center">Temps de présence</th></tr></thead><tbody>${rows}</tbody></table>
+        <table class="att-tbl"><thead><tr><th>${L.col_num}</th><th>${L.col_name}</th><th>${L.col_email}</th><th>${L.col_entity}</th><th style="text-align:center">${L.col_time}</th></tr></thead><tbody>${rows}</tbody></table>
       </div>
     </div>`;
   });
-  html += `<div style="font-size:10px;color:#9ca3af;margin-top:.5rem">* Départs &lt;2min : probable confusion de session FR/EN. Ces participants ont vraisemblablement rejoint la session EN 1h après.</div>`;
+  html += `<div style="font-size:10px;color:#9ca3af;margin-top:.5rem">${L.short_footnote}</div>`;
   document.getElementById('panel-att').innerHTML = html;
 }
 
