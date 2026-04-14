@@ -403,21 +403,26 @@ function renderEntities() {
   const stats = buildEntityStats();
   const entities = Object.keys(stats).sort((a, b) => stats[b].unique_people - stats[a].unique_people);
 
-  const totalUnique = entities.reduce((s, e) => s + stats[e].unique_people, 0);
-  const totalNet    = entities.reduce((s, e) => s + stats[e].net_count, 0);
-  const totalShort  = entities.reduce((s, e) => s + stats[e].short_count, 0);
-  const nbEntities  = entities.filter(e => stats[e].unique_people > 0).length;
-  const topEntity   = entities[0] || '—';
-  const topR3       = entities.reduce((best, e) => stats[e].returning_3plus > (best ? stats[best].returning_3plus : -1) ? e : best, null);
+  // ── Métriques agrégées ──────────────────────────────────────────
+  const totalUnique   = entities.reduce((s, e) => s + stats[e].unique_people, 0);
+  const totalNet      = entities.reduce((s, e) => s + stats[e].net_count, 0);
+  const totalShort    = entities.reduce((s, e) => s + stats[e].short_count, 0);
+  const nbActive      = entities.filter(e => stats[e].unique_people > 0).length;
+  const nbObserved    = entities.filter(e => stats[e].raw_count > 0).length;
+  const topEntity     = entities.find(e => stats[e].unique_people > 0) || '—';
+  const totalR3       = entities.reduce((s, e) => s + stats[e].returning_3plus, 0);
+  const r3Pct         = totalUnique > 0 ? Math.round(totalR3 / totalUnique * 100) : 0;
 
+  // ── KPIs ────────────────────────────────────────────────────────
   const kpiHtml = `
     <div class="kpi-grid" style="margin-bottom:1rem">
-      <div class="kpi-card"><div class="kpi-lbl">Entités représentées</div><div class="kpi-val" style="color:#185FA5">${nbEntities}</div><div class="kpi-sub">sur ${Object.keys(ENTITY_MAP).length + 1} entités connues</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">Entités actives</div><div class="kpi-val" style="color:#185FA5">${nbActive}</div><div class="kpi-sub">${nbObserved > nbActive ? nbObserved + ' observées au total' : 'toutes actives'}</div></div>
       <div class="kpi-card"><div class="kpi-lbl">Participants uniques (hors short)</div><div class="kpi-val">${totalUnique}</div><div class="kpi-sub">${totalNet} présences cumulées</div></div>
       <div class="kpi-card"><div class="kpi-lbl">Entité la plus représentée</div><div class="kpi-val" style="font-size:15px;font-weight:500;color:${ENTITY_COLORS[topEntity]||'#185FA5'}">${topEntity}</div><div class="kpi-sub">${stats[topEntity] ? stats[topEntity].unique_people : 0} personnes uniques</div></div>
-      <div class="kpi-card"><div class="kpi-lbl">Fidélité 3 sessions+</div><div class="kpi-val" style="color:#3B6D11">${entities.reduce((s,e)=>s+stats[e].returning_3plus,0)}</div><div class="kpi-sub">${topR3 ? topR3 + ' en tête' : '—'}</div></div>
+      <div class="kpi-card"><div class="kpi-lbl">Participants 3 sessions+</div><div class="kpi-val" style="color:#3B6D11">${totalR3}</div><div class="kpi-sub">${r3Pct}% des uniques</div></div>
     </div>`;
 
+  // ── Charts : labels = entités actives uniquement ─────────────────
   const chartLabels = entities.filter(e => stats[e].unique_people > 0);
   const chartBg = chartLabels.map(e => ENTITY_COLORS[e] || '#9ca3af');
 
@@ -433,22 +438,39 @@ function renderEntities() {
       </div>
     </div>`;
 
+  // ── Tableau ──────────────────────────────────────────────────────
   let tableRows = '';
   entities.forEach(entity => {
     const e = stats[entity];
     if (e.raw_count === 0) return;
+    const isShortOnly = e.unique_people === 0 && e.short_count > 0;
     const color = ENTITY_COLORS[entity] || '#9ca3af';
-    const pct = totalUnique > 0 ? Math.round(e.unique_people / totalUnique * 100) : 0;
-    tableRows += `<tr>
-      <td style="white-space:nowrap"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span><strong>${entity}</strong></span></td>
-      <td style="text-align:center;font-weight:500">${e.unique_people}</td>
-      <td style="text-align:center;color:#6b7280">${pct}%</td>
-      <td style="text-align:center">${e.fr_count}</td>
-      <td style="text-align:center">${e.en_count}</td>
-      <td style="text-align:center">${e.net_count}</td>
+    const pct = totalUnique > 0 && e.unique_people > 0 ? Math.round(e.unique_people / totalUnique * 100) : 0;
+
+    let formatDom = '—';
+    if (e.net_count > 0) {
+      const ratio = e.en_count / e.net_count;
+      if (e.fr_count > 0 && e.en_count > 0 && ratio >= 0.25 && ratio <= 0.75) formatDom = '<span class="badge" style="background:#f4f5f7;color:#6b7280">Mixte</span>';
+      else if (e.fr_count >= e.en_count) formatDom = '<span class="badge" style="background:#E6F1FB;color:#185FA5">FR</span>';
+      else formatDom = '<span class="badge" style="background:#f4f5f7;color:#85B7EB;border:0.5px solid #85B7EB44">EN</span>';
+    }
+
+    const rowStyle = isShortOnly ? 'opacity:.45;' : '';
+    const entityCell = isShortOnly
+      ? `<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span><span style="color:#9ca3af">${entity}</span><span class="badge" style="background:#f4f5f7;color:#9ca3af;margin-left:2px">short only</span></span>`
+      : `<span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span><strong>${entity}</strong></span>`;
+
+    tableRows += `<tr style="${rowStyle}">
+      <td style="white-space:nowrap">${entityCell}</td>
+      <td style="text-align:center;font-weight:500">${e.unique_people > 0 ? e.unique_people : '—'}</td>
+      <td style="text-align:center;color:#6b7280">${e.unique_people > 0 ? pct + '%' : '—'}</td>
+      <td style="text-align:center">${e.fr_count > 0 ? e.fr_count : '—'}</td>
+      <td style="text-align:center">${e.en_count > 0 ? e.en_count : '—'}</td>
+      <td style="text-align:center">${e.net_count > 0 ? e.net_count : '—'}</td>
       <td style="text-align:center">${e.avg_minutes > 0 ? e.avg_minutes + ' min' : '—'}</td>
-      <td style="text-align:center;color:#3B6D11;font-weight:500">${e.returning_2plus}</td>
-      <td style="text-align:center;color:#185FA5;font-weight:500">${e.returning_3plus}</td>
+      <td style="text-align:center;color:#3B6D11;font-weight:500">${e.returning_2plus > 0 ? e.returning_2plus : '—'}</td>
+      <td style="text-align:center;color:#185FA5;font-weight:500">${e.returning_3plus > 0 ? e.returning_3plus : '—'}</td>
+      <td style="text-align:center">${formatDom}</td>
       <td style="text-align:center;color:#9ca3af;font-size:10px">${e.short_count > 0 ? e.short_count : '—'}</td>
     </tr>`;
   });
@@ -459,40 +481,53 @@ function renderEntities() {
         <thead><tr>
           <th>Entité</th>
           <th style="text-align:center">Uniques</th>
-          <th style="text-align:center">Part</th>
+          <th style="text-align:center">% uniques</th>
           <th style="text-align:center">FR</th>
           <th style="text-align:center">EN</th>
           <th style="text-align:center">Présences</th>
           <th style="text-align:center">Moy. min</th>
           <th style="text-align:center">≥ 2 sess.</th>
           <th style="text-align:center">≥ 3 sess.</th>
+          <th style="text-align:center">Format</th>
           <th style="text-align:center">Short*</th>
         </tr></thead>
         <tbody>${tableRows}</tbody>
       </table>
     </div>`;
 
-  const dominated = topEntity !== '—' ? `<strong>${topEntity}</strong> représente ${stats[topEntity] ? Math.round(stats[topEntity].unique_people/totalUnique*100) : 0}% des participants uniques.` : '';
+  // ── Insights ────────────────────────────────────────────────────
+  const topPct = stats[topEntity] && totalUnique > 0 ? Math.round(stats[topEntity].unique_people / totalUnique * 100) : 0;
+  const dominated = topEntity !== '—'
+    ? `<strong>${topEntity}</strong> reste le noyau principal de diffusion du programme, avec <strong>${topPct}%</strong> des participants uniques.`
+    : '';
+
   const bilingualEntities = entities.filter(e => stats[e].fr_count > 0 && stats[e].en_count > 0);
   const bilingualHtml = bilingualEntities.length > 0
-    ? `Entités bilinguales (FR & EN) : <strong>${bilingualEntities.join(', ')}</strong>.`
-    : 'Aucune entité ne participe aux deux langues.';
-  const loyalCount = entities.reduce((s, e) => s + stats[e].returning_3plus, 0);
+    ? `${bilingualEntities.length} entité(s) participent aux deux formats (FR & EN) : <strong>${bilingualEntities.join(', ')}</strong>.`
+    : 'Aucune entité ne participe aux deux formats.';
+
+  const enOther = entities.filter(e => e !== 'VINCI Energies').reduce((s, e) => s + stats[e].en_count, 0);
+  const frOther = entities.filter(e => e !== 'VINCI Energies').reduce((s, e) => s + stats[e].fr_count, 0);
+  const enVectorHtml = enOther > frOther
+    ? `<div class="pilot-row"><div class="pip" style="background:#85B7EB"></div><div>Le format anglais est le principal vecteur de diffusion inter-entités (${enOther} présences EN vs ${frOther} FR hors ${topEntity === 'VINCI Energies' ? 'VINCI Energies' : topEntity}).</div></div>`
+    : '';
 
   const insightsHtml = `
     <div class="card" style="margin-bottom:1rem;border-left:3px solid #F5A623">
       <div style="font-size:12px;font-weight:500;margin-bottom:8px">Insights — Diffusion par entité</div>
       <div class="pilot-row"><div class="pip" style="background:#185FA5"></div><div>${dominated}</div></div>
       <div class="pilot-row"><div class="pip" style="background:#3B6D11"></div><div>${bilingualHtml}</div></div>
-      <div class="pilot-row"><div class="pip" style="background:#854F0B"></div><div>${loyalCount} participant(s) ont suivi ≥ 3 sessions, témoignant d'une forte fidélité sur ${nbEntities} entités.</div></div>
-      <div class="pilot-row"><div class="pip" style="background:#9ca3af"></div><div>${totalShort} départ(s) prématuré(s) enregistrés (exclus des métriques principales).</div></div>
+      <div class="pilot-row"><div class="pip" style="background:#854F0B"></div><div>${totalR3} participant(s) ont suivi ≥ 3 sessions (${r3Pct}% des uniques), signe d'un engagement durable.</div></div>
+      ${enVectorHtml}
+      <div class="pilot-row"><div class="pip" style="background:#9ca3af"></div><div>${totalShort} départ(s) prématuré(s) exclus des métriques${nbObserved > nbActive ? ` · ${nbObserved - nbActive} entité(s) détectée(s) uniquement via short exits` : ''}.</div></div>
     </div>`;
 
   const noteHtml = `
     <div style="font-size:10px;color:#9ca3af;padding:.5rem 0">
       * <strong>Short</strong> : départs &lt; 2 min (probable confusion FR/EN) — exclus de toutes les métriques de participation.<br>
-      L'entité est déduite du domaine email. Les participants dont le domaine n'est pas dans le mapping sont classés « Other ».<br>
-      Un même participant peut apparaître dans plusieurs sessions : <em>Uniques</em> = personnes distinctes (email), <em>Présences</em> = total lignes non-short.
+      <strong>Entités actives</strong> : au moins 1 participant non-short · <strong>Entités observées</strong> : détectées au total, y compris short-only.<br>
+      L'entité est déduite du domaine email. Domaine non mappé → classé « Other ».<br>
+      <em>Uniques</em> = personnes distinctes (email) · <em>Présences</em> = total lignes non-short · <em>Format</em> : FR / EN / Mixte selon répartition des présences.
     </div>`;
 
   document.getElementById('panel-entities').innerHTML = `
