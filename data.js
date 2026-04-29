@@ -21,11 +21,11 @@ var AI_TIPS = [
 ];
 
 var PILOT_TEAM = [
-  {name:'Alice Folscheid',role:'Pilote FR',s:2,max:3,sat:true,notes:'Répondante form S1+S2 · Absente S3'},
-  {name:'Stéphanie Heissat',role:'Pilote FR',s:3,max:3,sat:false,notes:'Présente S3 FR'},
-  {name:'Rafaella Hallack',role:'Pilote EN',s:3,max:3,sat:true,notes:'Répondante form S1+S3'},
-  {name:'Florent Jannier',role:'Pilote FR/EN',s:2,max:3,sat:false,notes:'Présent S3 EN'},
-  {name:'DE OLIVEIRA-CEZAR Paula',role:'Pilote EN',s:1,max:3,sat:false,notes:'Avancée Copilot · levier M&A · Absente S3'},
+  {name:'Alice Folscheid',role:'Pilote FR',s:2,max:4,sat:true,notes:'Répondante form S1+S2 · Absente S3 · Absente S4 EN'},
+  {name:'Stéphanie Heissat',role:'Pilote FR',s:3,max:4,sat:false,notes:'Présente S3 FR · Absente S4 EN'},
+  {name:'Rafaella Hallack',role:'Pilote EN',s:4,max:4,sat:true,notes:'Répondante form S1+S3 · Présente S4 EN'},
+  {name:'Florent Jannier',role:'Pilote FR/EN',s:2,max:4,sat:false,notes:'Présent S3 EN · Short S4 EN (8s)'},
+  {name:'DE OLIVEIRA-CEZAR Paula',role:'Pilote EN',s:1,max:4,sat:false,notes:'Avancée Copilot · levier M&A · Absente S3 · Absente S4 EN'},
 ];
 
 var PHASES = [
@@ -39,7 +39,9 @@ var VERBATIMS = [
   {session:'S1',from:'Rafaella Hallack',tag:'Sujet demandé',text:'Analyse de contrats avec l\'IA'},
   {session:'S1',from:'Alice Folscheid',tag:'Tip à tester',text:'Framework R-T-F-C-E'},
   {session:'S2',from:'Alice Folscheid',tag:'Sujet demandé',text:'Contract analysis with AI · Workflow Email→Meeting→Action'},
+  {session:'S3',from:'Teresa Oliveira',tag:'Tip à tester',text:'Interpret, summary meeting'},
   {session:'S3',from:'Teresa Oliveira',tag:'Sujet demandé',text:'PowerPoint avec Copilot'},
+  {session:'S3',from:'Rafaella Hallack',tag:'Tip à tester',text:'Prepare for a meeting'},
   {session:'S3',from:'Rafaella Hallack',tag:'Sujet demandé',text:'Analyse de documents avec Copilot'},
 ];
 
@@ -159,6 +161,26 @@ var ATTENDANCE = {
       {name:'BOUILLON Elodie',email:'Elodie.BOUILLON@vinci-energies.com',time:'56m',short:false},
       {name:'HEISSAT Stephanie',email:'stephanie.heissat@vinci-energies.com',time:'56m',short:false},
       {name:'GRINA Meryem',email:'meryem.grina@cegelec.com',time:'47m',short:false},
+    ]
+  },
+  S4_EN: {
+    date:'28 avr. 2026',session:'S4 EN',duration:'58m 58s',avg_time:'44m 12s',
+    participants:[
+      {name:'HALLACK Rafaella',email:'rafaella.hallack@omexom.com',time:'56m 43s',short:false},
+      {name:'LIM Lester',email:'lester.lim@vinci-energies.com',time:'54m 30s',short:false},
+      {name:'PAIVA Felix',email:'felix.paiva@omexom.com',time:'53m 4s',short:false},
+      {name:'NAVARRO Beatriz',email:'beatriz.navarro@axians.com',time:'53m 1s',short:false},
+      {name:'PEREIRA Lola',email:'lola.pereira@vinci-energies.com',time:'52m 44s',short:false},
+      {name:'GOMES Oswaldo',email:'oswaldo.gomes@actemium.com',time:'50m 30s',short:false},
+      {name:'VALERA Gines',email:'gines.valera@vinci-energies.com',time:'49m 51s',short:false},
+      {name:'GOMEZ Sebastian',email:'sebastian.gomez@vinci-energies.com',time:'48m 14s',short:false},
+      {name:'SUNDARAJ Kausalya',email:'kausalya.sundaraj@vinci-energies.com',time:'47m 22s',short:false},
+      {name:'FOFANA Charlene',email:'charlene.fofana@vinci-energies.com',time:'40m 4s',short:false},
+      {name:'LOPEZ Marta',email:'marta.lopez@vinci-energies.com',time:'43m 30s',short:false},
+      {name:'GRINA Meryem',email:'meryem.grina@cegelec.com',time:'37m 13s',short:false},
+      {name:'OLIVEIRA Teresa',email:'teresa.oliveira@vinci-energies.com',time:'36m 13s',short:false},
+      {name:'ABREU-LOPES Alexandra',email:'alexandra.abreu-lopes@axians.com',time:'10m 54s',short:false},
+      {name:'JANNIER Florent',email:'florent.jannier@vinci-energies.com',time:'8s',short:true},
     ]
   }
 };
@@ -313,7 +335,7 @@ var DEFAULT = {
     {id:1,date:'13 mars 2026',theme:'Outlook + Copilot — Fondamentaux',phase:1,status:'done',fr:12,en:21,satisfaction:5.0,repondants:3,notes:'Sophie Frémont présente EN (57m). 2 départs <1min en FR : probable confusion FR→EN, session EN 1h après.',sat_detail:[{lbl:'Pertinence',v:5},{lbl:'Clarté',v:5},{lbl:'Exemples pratiques',v:5},{lbl:'Profondeur',v:5},{lbl:'Rythme',v:5},{lbl:'Confiance Copilot',v:4.3}]},
     {id:2,date:'27 mars 2026',theme:'Outlook + Copilot — Avancé',phase:1,status:'done',fr:12,en:15,satisfaction:5.0,repondants:1,notes:'2 départs <2min : probable confusion FR→EN. 1 répondant satisfaction.',sat_detail:[{lbl:'Pertinence',v:5},{lbl:'Clarté',v:5},{lbl:'Exemples pratiques',v:5},{lbl:'Profondeur',v:5},{lbl:'Rythme',v:5},{lbl:'Confiance Copilot',v:5}]},
     {id:3,date:'10 avr. 2026',theme:'Teams Conversations + Copilot',phase:1,status:'done',fr:6,en:17,satisfaction:5.0,repondants:2,notes:'',sat_detail:[{lbl:'Pertinence',v:5},{lbl:'Clarté',v:5},{lbl:'Exemples pratiques',v:5},{lbl:'Profondeur',v:5},{lbl:'Rythme',v:5},{lbl:'Confiance Copilot',v:3.5}]},
-    {id:4,date:'~28 avr. 2026',theme:'Teams Réunions + Copilot',phase:1,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'Date à confirmer avec Lola — report du 24 au 28 avr.',sat_detail:[]},
+    {id:4,date:'28 avr. 2026',theme:'Teams Réunions + Copilot',phase:1,status:'done',fr:null,en:14,satisfaction:null,repondants:0,notes:'Florent Jannier : 8s (short). 14 participants non-short.',sat_detail:[]},
     {id:5,date:'7 mai 2026',theme:'PowerPoint + Copilot',phase:2,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
     {id:6,date:'21 mai 2026',theme:'Cas métiers juridiques — TBD',phase:2,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
     {id:7,date:'5 juin 2026',theme:'Cas métiers juridiques — TBD',phase:2,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
@@ -335,7 +357,7 @@ var DEFAULT = {
     {sid:1,pdf:true,rec_fr:true,rec_en:true,ppt:true,trackable:false,clicks:null},
     {sid:2,pdf:true,rec_fr:true,rec_en:true,ppt:true,trackable:false,clicks:null},
     {sid:3,pdf:true,rec_fr:false,rec_en:false,ppt:true,trackable:true,clicks:6,clicks_pres:3,clicks_guide:3,clicks_rec_fr:0,clicks_rec_en:0},
-    {sid:4,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
+    {sid:4,pdf:false,rec_fr:false,rec_en:false,ppt:true,trackable:true,clicks:1,clicks_pres:1,clicks_guide:0,clicks_rec_fr:0,clicks_rec_en:0},
     {sid:5,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
     {sid:6,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
     {sid:7,pdf:false,rec_fr:false,rec_en:false,ppt:false,trackable:true,clicks:null},
