@@ -163,6 +163,13 @@ var ATTENDANCE = {
       {name:'GRINA Meryem',email:'meryem.grina@cegelec.com',time:'47m',short:false},
     ]
   },
+  S4_FR: {
+    date:'28 avr. 2026',session:'S4 FR',duration:'18m 28s',avg_time:'9m 46s',
+    participants:[
+      {name:'PEREIRA Lola',email:'lola.pereira@vinci-energies.com',time:'9m 39s',short:false},
+      {name:'GRINA Meryem',email:'meryem.grina@cegelec.com',time:'3m 49s',short:false},
+    ]
+  },
   S4_EN: {
     date:'28 avr. 2026',session:'S4 EN',duration:'58m 58s',avg_time:'44m 12s',
     participants:[
@@ -335,7 +342,7 @@ var DEFAULT = {
     {id:1,date:'13 mars 2026',theme:'Outlook + Copilot — Fondamentaux',phase:1,status:'done',fr:12,en:21,satisfaction:5.0,repondants:3,notes:'Sophie Frémont présente EN (57m). 2 départs <1min en FR : probable confusion FR→EN, session EN 1h après.',sat_detail:[{lbl:'Pertinence',v:5},{lbl:'Clarté',v:5},{lbl:'Exemples pratiques',v:5},{lbl:'Profondeur',v:5},{lbl:'Rythme',v:5},{lbl:'Confiance Copilot',v:4.3}]},
     {id:2,date:'27 mars 2026',theme:'Outlook + Copilot — Avancé',phase:1,status:'done',fr:12,en:15,satisfaction:5.0,repondants:1,notes:'2 départs <2min : probable confusion FR→EN. 1 répondant satisfaction.',sat_detail:[{lbl:'Pertinence',v:5},{lbl:'Clarté',v:5},{lbl:'Exemples pratiques',v:5},{lbl:'Profondeur',v:5},{lbl:'Rythme',v:5},{lbl:'Confiance Copilot',v:5}]},
     {id:3,date:'10 avr. 2026',theme:'Teams Conversations + Copilot',phase:1,status:'done',fr:6,en:17,satisfaction:5.0,repondants:2,notes:'',sat_detail:[{lbl:'Pertinence',v:5},{lbl:'Clarté',v:5},{lbl:'Exemples pratiques',v:5},{lbl:'Profondeur',v:5},{lbl:'Rythme',v:5},{lbl:'Confiance Copilot',v:3.5}]},
-    {id:4,date:'28 avr. 2026',theme:'Teams Réunions + Copilot',phase:1,status:'done',fr:null,en:14,satisfaction:null,repondants:0,notes:'Florent Jannier : 8s (short). 14 participants non-short.',sat_detail:[]},
+    {id:4,date:'28 avr. 2026',theme:'Teams Réunions + Copilot',phase:1,status:'done',fr:2,en:14,satisfaction:null,repondants:0,notes:'Session FR annulée faute de participants (Lola + Meryem présentes 10/4min). Décision : format EN uniquement pour S4. Florent Jannier : 8s (short) côté EN.',sat_detail:[]},
     {id:5,date:'7 mai 2026',theme:'PowerPoint + Copilot',phase:2,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
     {id:6,date:'21 mai 2026',theme:'Cas métiers juridiques — TBD',phase:2,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
     {id:7,date:'5 juin 2026',theme:'Cas métiers juridiques — TBD',phase:2,status:'planned',fr:null,en:null,satisfaction:null,repondants:0,notes:'',sat_detail:[]},
